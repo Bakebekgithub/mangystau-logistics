@@ -63,9 +63,40 @@ export const ASSUMPTIONS = {
     "Порожний пробег в регионе сегодня ~40% — цифра из кейса хакатона. " +
     "Экономия считается относительно неё, а не относительно нашего допущения.",
 
+  /**
+   * Fuel cost as a share of a carrier's operating cost, used to turn a fuel
+   * figure into an indicative trip price.
+   *
+   * This is a stated assumption, not a measured tariff. We deliberately do not
+   * invent a per-tonne-kilometre rate for the region — we do not know it, and a
+   * made-up rate is the first thing that would fall apart under questioning.
+   * Instead the price is derived from the one cost we do compute from real data
+   * (fuel over real road distances) and scaled by this share, which covers the
+   * driver, wear, and margin. Shippers and carriers still agree the final figure
+   * between themselves; the product shows a starting point, not a price list.
+   */
+  fuelShareOfOperatingCost: 0.38,
+  priceNote:
+    "Ориентировочная цена = стоимость топлива ÷ 0.38. Топливо считается по реальным " +
+    "дорожным расстояниям, доля топлива в затратах перевозчика — заявленное допущение. " +
+    "Это ориентир для начала разговора, а не тариф: стороны договариваются сами.",
+
   distanceSource: "OSRM на дорожной сети OpenStreetMap, 2080 пар, все по дорогам",
   settlementSource: "OpenStreetMap, 65 населённых пунктов Мангистауской области, ODbL",
 } as const;
+
+/**
+ * An indicative price for a trip, derived from its fuel cost.
+ *
+ * Returns tenge, rounded to the nearest 500 so it reads as an estimate rather
+ * than a quote — a figure like 74 000 ₸ invites negotiation, 73 847 ₸ pretends
+ * to a precision we do not have.
+ */
+export function indicativePriceKzt(fuelLitres: number): number {
+  const fuelCost = fuelLitres * ASSUMPTIONS.dieselPriceKztPerL;
+  const price = fuelCost / ASSUMPTIONS.fuelShareOfOperatingCost;
+  return Math.round(price / 500) * 500;
+}
 
 /** Litres per kilometre for a given load fraction (0 = empty, 1 = full). */
 export function consumptionPerKm(vehicle: Vehicle, loadFraction: number): number {

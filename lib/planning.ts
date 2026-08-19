@@ -78,9 +78,9 @@ async function persistTrip(plan: TripPlan): Promise<string> {
   await db.query(
     `INSERT INTO trips (
        id, vehicle_id, status, kind, total_km, laden_km, empty_km,
-       baseline_total_km, baseline_empty_km, fuel_saved_l, money_saved_kzt,
+       baseline_total_km, baseline_empty_km, fuel_l, fuel_saved_l, money_saved_kzt,
        paid_km_share, minutes, explanation, explained_by
-     ) VALUES ($1,$2,'proposed',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'rules')`,
+     ) VALUES ($1,$2,'proposed',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'rules')`,
     [
       tripId,
       plan.vehicle_id,
@@ -90,6 +90,7 @@ async function persistTrip(plan: TripPlan): Promise<string> {
       plan.empty_km,
       plan.baseline_total_km,
       plan.baseline_empty_km,
+      plan.fuel_l,
       plan.fuel_saved_l,
       plan.money_saved_kzt,
       plan.paid_km_share,

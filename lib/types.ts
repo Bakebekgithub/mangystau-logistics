@@ -82,6 +82,8 @@ export interface TripPlan {
   empty_km: number;
   baseline_total_km: number;
   baseline_empty_km: number;
+  /** Fuel this route actually burns, used for the indicative price. */
+  fuel_l: number;
   fuel_saved_l: number;
   money_saved_kzt: number;
   paid_km_share: number;

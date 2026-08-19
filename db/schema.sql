@@ -107,6 +107,8 @@ CREATE TABLE trips (
   -- served by its own dedicated out-and-back run, which is how it works today.
   baseline_total_km numeric(8, 1) NOT NULL,
   baseline_empty_km numeric(8, 1) NOT NULL,
+  -- Fuel this route burns, which the indicative price is derived from.
+  fuel_l            numeric(8, 1) NOT NULL,
   fuel_saved_l      numeric(8, 1) NOT NULL,
   money_saved_kzt   integer NOT NULL,
   -- Share of this trip's kilometres that carry cargo. The carrier's own

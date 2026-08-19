@@ -75,6 +75,37 @@ export async function listTypedOrders(limit = 25): Promise<OrderView[]> {
   return rows.map((r) => ({ ...r, weight_kg: Number(r.weight_kg), km: r.km === null ? null : Number(r.km) }));
 }
 
+/**
+ * Orders in the pool that no proposal has picked up yet.
+ *
+ * Shown at the top of the carrier screen so a just-placed order is visibly
+ * waiting rather than silently absent until someone re-runs planning.
+ */
+export async function listUnplannedOrders(): Promise<OrderView[]> {
+  const db = getDb();
+  const rows = await db.query<OrderView>(
+    `SELECT o.id, o.shipper_name,
+            o.origin_id, so.name_ru AS origin_name,
+            o.destination_id, sd.name_ru AS destination_name, sd.place AS destination_place,
+            o.cargo, o.weight_kg, o.needs_cooling, o.ready_at, o.deadline_at,
+            o.status, o.raw_text, o.parsed_by,
+            d.km
+     FROM orders o
+     JOIN settlements so ON so.id = o.origin_id
+     JOIN settlements sd ON sd.id = o.destination_id
+     LEFT JOIN distances d ON d.from_id = o.origin_id AND d.to_id = o.destination_id
+     WHERE o.status = 'new'
+       AND NOT EXISTS (
+         SELECT 1 FROM trip_stops ts
+         JOIN trips t ON t.id = ts.trip_id AND t.status <> 'declined'
+         WHERE ts.order_id = o.id
+       )
+     ORDER BY o.created_at DESC
+     LIMIT 12`,
+  );
+  return rows.map((r) => ({ ...r, weight_kg: Number(r.weight_kg), km: r.km === null ? null : Number(r.km) }));
+}
+
 export interface TripStopView {
   id: string;
   seq: number;
@@ -105,12 +136,15 @@ export interface TripView {
   empty_km: number;
   baseline_total_km: number;
   baseline_empty_km: number;
+  fuel_l: number;
   fuel_saved_l: number;
   money_saved_kzt: number;
   paid_km_share: number;
   minutes: number;
   explanation: string;
   accepted_at: string | null;
+  at_lat: number;
+  at_lon: number;
   stops: TripStopView[];
 }
 
@@ -119,9 +153,9 @@ export async function listTrips(status?: TripView["status"]): Promise<TripView[]
 
   const trips = await db.query<Omit<TripView, "stops">>(
     `SELECT t.id, t.status, t.kind, t.vehicle_id, v.plate, v.kind AS vehicle_kind, v.capacity_kg,
-            c.name AS carrier_name, s.name_ru AS at_name,
+            c.name AS carrier_name, s.name_ru AS at_name, s.lat AS at_lat, s.lon AS at_lon,
             t.total_km, t.laden_km, t.empty_km, t.baseline_total_km, t.baseline_empty_km,
-            t.fuel_saved_l, t.money_saved_kzt, t.paid_km_share, t.minutes,
+            t.fuel_l, t.fuel_saved_l, t.money_saved_kzt, t.paid_km_share, t.minutes,
             t.explanation, t.accepted_at
      FROM trips t
      JOIN vehicles v ON v.id = t.vehicle_id
@@ -164,10 +198,13 @@ export async function listTrips(status?: TripView["status"]): Promise<TripView[]
     empty_km: Number(t.empty_km),
     baseline_total_km: Number(t.baseline_total_km),
     baseline_empty_km: Number(t.baseline_empty_km),
+    fuel_l: Number(t.fuel_l),
     fuel_saved_l: Number(t.fuel_saved_l),
     money_saved_kzt: Number(t.money_saved_kzt),
     paid_km_share: Number(t.paid_km_share),
     capacity_kg: Number(t.capacity_kg),
+    at_lat: Number(t.at_lat),
+    at_lon: Number(t.at_lon),
     stops: byTrip.get(t.id) ?? [],
   }));
 }

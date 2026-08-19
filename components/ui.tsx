@@ -1,121 +1,276 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+/* ---------------------------------------------------------------------------
+ * Surfaces
+ * ------------------------------------------------------------------------- */
+
+export function Surface({
+  children,
+  className = "",
+  interactive = false,
+  accent = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  interactive?: boolean;
+  accent?: boolean;
+}) {
   return (
-    <div className={`rounded-xl border border-sand-200 bg-white p-4 shadow-sm ${className}`}>
+    <div
+      className={[
+        "rounded-card border bg-ink-900/90 shadow-card backdrop-blur-sm",
+        accent ? "border-accent-dim/60" : "border-ink-750",
+        interactive
+          ? "transition duration-200 ease-swift hover:border-ink-600 hover:shadow-lift"
+          : "",
+        className,
+      ].join(" ")}
+    >
       {children}
     </div>
   );
 }
 
-export function SectionTitle({ children, hint }: { children: ReactNode; hint?: string }) {
+export function SectionHead({
+  title,
+  hint,
+  action,
+}: {
+  title: ReactNode;
+  hint?: ReactNode;
+  action?: ReactNode;
+}) {
   return (
-    <div className="mb-3">
-      <h2 className="text-lg font-semibold text-sand-900">{children}</h2>
-      {hint ? <p className="mt-0.5 text-sm text-sand-600">{hint}</p> : null}
+    <div className="mb-4 flex items-end justify-between gap-4">
+      <div>
+        <h2 className="text-h2 text-ink-50">{title}</h2>
+        {hint ? <p className="mt-1 max-w-2xl text-small text-ink-400">{hint}</p> : null}
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }
 
-/**
- * A single figure with its label. `tone` marks the two things this product is
- * about: empty running is a loss, loaded running is value.
- */
-export function Stat({
-  label,
-  value,
-  sub,
-  tone = "neutral",
+export function Label({ children }: { children: ReactNode }) {
+  return <div className="text-caption uppercase text-ink-500">{children}</div>;
+}
+
+/* ---------------------------------------------------------------------------
+ * Buttons
+ * ------------------------------------------------------------------------- */
+
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonSize = "sm" | "md" | "lg";
+
+const BUTTON_BASE =
+  "inline-flex items-center justify-center gap-2 font-medium transition duration-150 ease-swift " +
+  "disabled:cursor-not-allowed disabled:opacity-40 active:translate-y-px select-none";
+
+const BUTTON_VARIANT: Record<ButtonVariant, string> = {
+  primary: "bg-accent text-ink-950 hover:bg-accent-hover active:bg-accent-press shadow-glow",
+  secondary: "bg-ink-800 text-ink-100 border border-ink-700 hover:bg-ink-750 hover:border-ink-600",
+  ghost: "text-ink-300 hover:bg-ink-800 hover:text-ink-100",
+  danger: "bg-danger/15 text-danger border border-danger/30 hover:bg-danger/25",
+};
+
+const BUTTON_SIZE: Record<ButtonSize, string> = {
+  sm: "h-8 rounded-control px-3 text-small",
+  md: "h-10 rounded-control px-4 text-body",
+  lg: "h-12 rounded-control px-5 text-[1rem] w-full",
+};
+
+export function buttonClass(variant: ButtonVariant = "primary", size: ButtonSize = "md") {
+  return [BUTTON_BASE, BUTTON_VARIANT[variant], BUTTON_SIZE[size]].join(" ");
+}
+
+export function LinkButton({
+  href,
+  children,
+  variant = "primary",
+  size = "md",
 }: {
-  label: string;
-  value: ReactNode;
-  sub?: ReactNode;
-  tone?: "neutral" | "loss" | "value";
+  href: string;
+  children: ReactNode;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
 }) {
-  const toneClass =
-    tone === "loss" ? "text-empty" : tone === "value" ? "text-laden" : "text-sand-900";
   return (
-    <div>
-      <div className="text-xs uppercase tracking-wide text-sand-500">{label}</div>
-      <div className={`mt-0.5 text-2xl font-semibold tabular-nums ${toneClass}`}>{value}</div>
-      {sub ? <div className="mt-0.5 text-xs text-sand-600">{sub}</div> : null}
-    </div>
+    <Link href={href} className={buttonClass(variant, size)}>
+      {children}
+    </Link>
   );
 }
+
+/* ---------------------------------------------------------------------------
+ * Badges
+ * ------------------------------------------------------------------------- */
+
+type BadgeTone = "neutral" | "accent" | "laden" | "empty" | "warn" | "danger";
+
+const BADGE_TONE: Record<BadgeTone, string> = {
+  neutral: "bg-ink-800 text-ink-300 border-ink-700",
+  accent: "bg-accent-faint text-accent border-accent-dim/60",
+  laden: "bg-laden-faint text-laden-ink border-laden-dim/60",
+  empty: "bg-empty-faint text-empty-ink border-empty-ink-dim/60",
+  warn: "bg-warn-faint text-warn border-warn/30",
+  danger: "bg-danger-faint text-danger border-danger/30",
+};
 
 export function Badge({
   children,
   tone = "neutral",
+  dot = false,
 }: {
   children: ReactNode;
-  tone?: "neutral" | "loss" | "value" | "info";
+  tone?: BadgeTone;
+  dot?: boolean;
 }) {
-  const map = {
-    neutral: "bg-sand-100 text-sand-700",
-    loss: "bg-orange-100 text-empty",
-    value: "bg-green-100 text-laden",
-    info: "bg-caspian-100 text-caspian-800",
-  } as const;
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${map[tone]}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1 text-[0.6875rem] font-medium ${BADGE_TONE[tone]}`}
+    >
+      {dot ? <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse-dot" /> : null}
       {children}
     </span>
   );
 }
 
-/**
- * A horizontal bar splitting a trip into paid and empty kilometres. The point of
- * the product in one glance.
- */
-export function PaidBar({ ladenKm, emptyKm }: { ladenKm: number; emptyKm: number }) {
-  const total = ladenKm + emptyKm;
-  const paidPercent = total > 0 ? (ladenKm / total) * 100 : 0;
+/* ---------------------------------------------------------------------------
+ * Metrics
+ * ------------------------------------------------------------------------- */
+
+export function Metric({
+  label,
+  value,
+  unit,
+  sub,
+  tone = "neutral",
+  size = "md",
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  unit?: ReactNode;
+  sub?: ReactNode;
+  tone?: "neutral" | "laden" | "empty" | "accent";
+  size?: "md" | "lg";
+}) {
+  const toneClass = {
+    neutral: "text-ink-50",
+    laden: "text-laden-ink",
+    empty: "text-empty-ink",
+    accent: "text-accent",
+  }[tone];
+
   return (
     <div>
-      <div className="flex h-2.5 overflow-hidden rounded-full bg-sand-200">
-        <div className="bg-laden" style={{ width: `${paidPercent}%` }} />
-        <div className="bg-empty" style={{ width: `${100 - paidPercent}%` }} />
+      <Label>{label}</Label>
+      <div className="mt-1.5 flex items-baseline gap-1.5">
+        <span className={`tnum ${size === "lg" ? "text-metric-lg" : "text-metric"} ${toneClass}`}>
+          {value}
+        </span>
+        {unit ? <span className="text-small text-ink-400">{unit}</span> : null}
       </div>
-      <div className="mt-1 flex justify-between text-xs text-sand-600">
-        <span className="text-laden">с грузом {Math.round(paidPercent)}%</span>
-        <span className="text-empty">порожний {Math.round(100 - paidPercent)}%</span>
+      {sub ? <div className="mt-1 text-small text-ink-400">{sub}</div> : null}
+    </div>
+  );
+}
+
+/**
+ * The product's signature element: how much of a trip's distance carries cargo.
+ *
+ * A truck that delivers one load and returns empty cannot exceed half, so the
+ * midpoint is marked — the bar reads as an argument, not just a ratio.
+ */
+export function LadenBar({
+  ladenKm,
+  emptyKm,
+  showCeiling = true,
+}: {
+  ladenKm: number;
+  emptyKm: number;
+  showCeiling?: boolean;
+}) {
+  const total = ladenKm + emptyKm;
+  const paid = total > 0 ? (ladenKm / total) * 100 : 0;
+
+  return (
+    <div>
+      <div className="relative h-2 overflow-hidden rounded-pill bg-ink-800">
+        <div
+          className="absolute inset-y-0 left-0 rounded-pill bg-laden transition-all duration-700 ease-swift"
+          style={{ width: `${paid}%` }}
+        />
+        <div
+          className="absolute inset-y-0 right-0 bg-empty/70 transition-all duration-700 ease-swift"
+          style={{ width: `${100 - paid}%` }}
+        />
+        {showCeiling ? (
+          <div
+            className="absolute inset-y-0 w-px bg-ink-100/60"
+            style={{ left: "50%" }}
+            title="Потолок схемы «туда с грузом, обратно порожняком»"
+          />
+        ) : null}
+      </div>
+      <div className="mt-1.5 flex items-center justify-between text-[0.6875rem]">
+        <span className="text-laden-ink">
+          с грузом <span className="tnum font-semibold">{Math.round(paid)}%</span>
+        </span>
+        {showCeiling ? <span className="text-ink-500">потолок 50%</span> : null}
+        <span className="text-empty-ink">
+          порожний <span className="tnum font-semibold">{Math.round(100 - paid)}%</span>
+        </span>
       </div>
     </div>
   );
 }
 
-export function RoleNav({ current }: { current: "shipper" | "driver" | "akimat" }) {
-  const items = [
-    { key: "shipper", href: "/shipper", label: "Отправитель" },
-    { key: "driver", href: "/driver", label: "Перевозчик" },
-    { key: "akimat", href: "/akimat", label: "Акимат" },
-  ] as const;
+/* ---------------------------------------------------------------------------
+ * Navigation
+ * ------------------------------------------------------------------------- */
 
+export type Role = "shipper" | "driver" | "akimat";
+
+const ROLE_TABS: { key: Role; href: string; label: string }[] = [
+  { key: "shipper", href: "/shipper", label: "Отправитель" },
+  { key: "driver", href: "/driver", label: "Перевозчик" },
+  { key: "akimat", href: "/akimat", label: "Диспетчер" },
+];
+
+export function TopBar({ current }: { current?: Role }) {
   return (
-    <header className="sticky top-0 z-[900] border-b border-sand-200 bg-sand-50/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center gap-1 px-3 py-2">
-        <Link href="/" className="mr-2 shrink-0 text-sm font-semibold text-caspian-700">
-          Mangystau<span className="text-sand-400"> Logistics</span>
+    <header className="sticky top-0 z-[900] border-b border-ink-800 bg-ink-950/85 backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
+          <Logo />
+          <span className="hidden text-[0.9375rem] font-semibold tracking-tight text-ink-50 sm:block">
+            Mangystau<span className="text-accent">.</span>
+          </span>
         </Link>
-        <nav className="flex flex-1 gap-1 overflow-x-auto">
-          {items.map((item) => (
-            <Link
-              key={item.key}
-              href={item.href}
-              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition ${
-                current === item.key
-                  ? "bg-caspian-600 font-medium text-white"
-                  : "text-sand-700 hover:bg-sand-100"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
+
+        <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
+          <div className="flex rounded-control bg-ink-850 p-0.5">
+            {ROLE_TABS.map((tab) => (
+              <Link
+                key={tab.key}
+                href={tab.href}
+                className={[
+                  "whitespace-nowrap rounded-[7px] px-3 py-1.5 text-small font-medium transition duration-150 ease-swift",
+                  current === tab.key
+                    ? "bg-ink-750 text-ink-50 shadow-card"
+                    : "text-ink-400 hover:text-ink-200",
+                ].join(" ")}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
         </nav>
+
         <Link
           href="/methodology"
-          className="shrink-0 rounded-lg px-2 py-1.5 text-xs text-sand-600 hover:bg-sand-100"
+          className="shrink-0 rounded-control px-2.5 py-1.5 text-small text-ink-400 transition hover:bg-ink-800 hover:text-ink-200"
         >
           Методология
         </Link>
@@ -124,10 +279,146 @@ export function RoleNav({ current }: { current: "shipper" | "driver" | "akimat" 
   );
 }
 
-export function Empty({ children }: { children: ReactNode }) {
+/** A mark rather than an emoji: two lanes converging into one. */
+export function Logo({ className = "h-6 w-6" }: { className?: string }) {
   return (
-    <div className="rounded-xl border border-dashed border-sand-300 p-6 text-center text-sm text-sand-600">
-      {children}
+    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="none">
+      <rect width="24" height="24" rx="7" fill="#11151D" />
+      <path
+        d="M5 7.5h6.5c2.2 0 3.5 1.4 3.5 3.2S13.7 14 11.5 14H7"
+        stroke="#19E5C4"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+      />
+      <path d="M5 16.5h14" stroke="#11A896" strokeWidth="1.9" strokeLinecap="round" />
+      <circle cx="19" cy="10.8" r="1.6" fill="#19E5C4" />
+    </svg>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * States
+ * ------------------------------------------------------------------------- */
+
+export function EmptyState({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children?: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="rounded-card border border-dashed border-ink-750 bg-ink-900/40 px-6 py-10 text-center">
+      <p className="text-h3 text-ink-200">{title}</p>
+      {children ? <p className="mx-auto mt-2 max-w-md text-small text-ink-400">{children}</p> : null}
+      {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
     </div>
+  );
+}
+
+export function Skeleton({ className = "h-4 w-full" }: { className?: string }) {
+  return (
+    <div
+      className={`animate-shimmer rounded bg-[linear-gradient(90deg,#161B25_25%,#1D2430_50%,#161B25_75%)] bg-[length:200%_100%] ${className}`}
+    />
+  );
+}
+
+export function Alert({
+  tone = "warn",
+  children,
+}: {
+  tone?: "warn" | "danger" | "accent";
+  children: ReactNode;
+}) {
+  const map = {
+    warn: "border-warn/30 bg-warn-faint text-warn",
+    danger: "border-danger/30 bg-danger-faint text-danger",
+    accent: "border-accent-dim/50 bg-accent-faint text-accent",
+  } as const;
+  return (
+    <div className={`rounded-control border px-3.5 py-2.5 text-small ${map[tone]}`}>{children}</div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * Route timeline — the shape of an assembled trip
+ * ------------------------------------------------------------------------- */
+
+export interface TimelineStop {
+  id: string;
+  seq: number;
+  name: string;
+  action: "pickup" | "dropoff";
+  detail?: string | null;
+  done?: boolean;
+}
+
+export function RouteTimeline({
+  stops,
+  origin,
+  compact = false,
+}: {
+  stops: TimelineStop[];
+  /** Where the vehicle stands before the first stop, and returns to at the end. */
+  origin?: string;
+  compact?: boolean;
+}) {
+  return (
+    <ol className={compact ? "space-y-1" : "space-y-2.5"}>
+      {origin ? (
+        <li className="flex items-center gap-3">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+            <span className="h-2 w-2 rounded-full bg-ink-500" />
+          </span>
+          <span className="text-small text-ink-500">Машина в {origin}</span>
+        </li>
+      ) : null}
+
+      {stops.map((stop, index) => (
+        <li key={stop.id} className="relative flex gap-3">
+          {index < stops.length - 1 ? (
+            <span
+              className="absolute left-3 top-6 h-[calc(100%-8px)] w-px bg-ink-750"
+              aria-hidden
+            />
+          ) : null}
+          <span
+            className={[
+              "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.625rem] font-bold",
+              stop.done
+                ? "bg-laden text-ink-950"
+                : stop.action === "pickup"
+                  ? "bg-accent text-ink-950"
+                  : "border border-ink-600 bg-ink-850 text-ink-300",
+            ].join(" ")}
+          >
+            {stop.done ? "✓" : stop.seq}
+          </span>
+          <span className="min-w-0 flex-1 pb-0.5">
+            <span className="flex flex-wrap items-baseline gap-x-2">
+              <span className="text-body font-medium text-ink-100">{stop.name}</span>
+              <span className="text-[0.6875rem] uppercase tracking-wide text-ink-500">
+                {stop.action === "pickup" ? "забрать" : "выгрузить"}
+              </span>
+            </span>
+            {stop.detail ? (
+              <span className="block text-small text-ink-400">{stop.detail}</span>
+            ) : null}
+          </span>
+        </li>
+      ))}
+
+      {origin ? (
+        <li className="flex items-center gap-3">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+            <span className="h-2 w-2 rounded-full border border-ink-600" />
+          </span>
+          <span className="text-small text-ink-500">Возврат в {origin}</span>
+        </li>
+      ) : null}
+    </ol>
   );
 }

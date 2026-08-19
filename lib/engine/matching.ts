@@ -287,6 +287,7 @@ export function proposeTrips(
         empty_km: route.empty_km,
         baseline_total_km: baseline.total_km,
         baseline_empty_km: baseline.empty_km,
+        fuel_l: route.fuel_l,
         fuel_saved_l: savings.fuel_saved_l,
         money_saved_kzt: savings.money_saved_kzt,
         paid_km_share: route.paid_km_share,
