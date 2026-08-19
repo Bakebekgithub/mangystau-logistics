@@ -99,11 +99,23 @@ async function persistTrip(plan: TripPlan): Promise<string> {
     ],
   );
 
-  for (const stop of plan.stops) {
+  // One statement for every stop rather than one per stop. Against a database in
+  // another country each round trip costs ~100 ms, and a planning cycle inserts
+  // roughly a hundred stops — that alone was most of the wait.
+  if (plan.stops.length > 0) {
+    const values: unknown[] = [];
+    const tuples = plan.stops.map((stop) => {
+      const row = [newId("stop"), tripId, stop.seq, stop.settlement_id, stop.action, stop.order_id];
+      const placeholders = row.map((value) => {
+        values.push(value);
+        return `$${values.length}`;
+      });
+      return `(${placeholders.join(",")})`;
+    });
     await db.query(
       `INSERT INTO trip_stops (id, trip_id, seq, settlement_id, action, order_id)
-       VALUES ($1,$2,$3,$4,$5,$6)`,
-      [newId("stop"), tripId, stop.seq, stop.settlement_id, stop.action, stop.order_id],
+       VALUES ${tuples.join(",")}`,
+      values,
     );
   }
 
