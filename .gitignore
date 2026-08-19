@@ -1,0 +1,22 @@
+node_modules/
+.next/
+out/
+build/
+
+# Secrets never enter the repository. This project is public.
+.env
+.env.local
+.env*.local
+
+# Local PGlite database used for development.
+.pgdata/
+
+*.tsbuildinfo
+next-env.d.ts
+
+.DS_Store
+*.log
+npm-debug.log*
+
+# Overpass cache is large and reproducible from scripts/fetch-settlements.mjs.
+data/source/

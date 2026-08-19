@@ -1,0 +1,183 @@
+/**
+ * Glue between the database and the pure engine.
+ *
+ * Everything the engine needs is loaded here and handed over as plain data, so
+ * the engine stays testable and this file stays boring.
+ */
+
+import { getDb } from "./db.ts";
+import { buildDistanceTable, type DistanceRow } from "./distance.ts";
+import { DEFAULT_MATCH_OPTIONS, proposeTrips, type MatchOptions } from "./engine/matching.ts";
+import type { DistanceTable, Order, Settlement, TripPlan, Vehicle } from "./types.ts";
+
+export interface DispatchContext {
+  settlements: Settlement[];
+  byId: Map<string, Settlement>;
+  dist: DistanceTable;
+  nameOf: (id: string) => string;
+}
+
+/**
+ * Loads reference data. The settlement list and distance matrix never change at
+ * runtime, so this is cached for the lifetime of the process.
+ */
+let contextCache: Promise<DispatchContext> | null = null;
+
+export function loadContext(): Promise<DispatchContext> {
+  if (!contextCache) contextCache = build();
+  return contextCache;
+}
+
+async function build(): Promise<DispatchContext> {
+  const db = getDb();
+  const settlements = await db.query<Settlement>(
+    `SELECT id, osm_id, name_kz, name_ru, place, population, lat, lon
+     FROM settlements ORDER BY population DESC NULLS LAST`,
+  );
+  const rows = await db.query<DistanceRow>(`SELECT from_id, to_id, km, minutes FROM distances`);
+
+  const byId = new Map(settlements.map((s) => [s.id, s]));
+  return {
+    settlements,
+    byId,
+    dist: buildDistanceTable(rows),
+    nameOf: (id) => byId.get(id)?.name_ru ?? id,
+  };
+}
+
+export function invalidateContext(): void {
+  contextCache = null;
+}
+
+export async function loadOrders(status?: Order["status"]): Promise<Order[]> {
+  const db = getDb();
+  const where = status ? `WHERE status = $1` : ``;
+  return db.query<Order>(
+    `SELECT id, shipper_name, origin_id, destination_id, cargo, weight_kg,
+            needs_cooling, ready_at, deadline_at, status, raw_text, parsed_by
+     FROM orders ${where} ORDER BY created_at`,
+    status ? [status] : [],
+  );
+}
+
+export async function loadVehicles(): Promise<Vehicle[]> {
+  const db = getDb();
+  return db.query<Vehicle>(
+    `SELECT id, carrier_id, plate, kind, capacity_kg, fuel_per_100km, at_id FROM vehicles ORDER BY id`,
+  );
+}
+
+/** Numbers arrive from Postgres as strings for numeric columns; normalise once. */
+function normaliseVehicle(v: Vehicle): Vehicle {
+  return { ...v, capacity_kg: Number(v.capacity_kg), fuel_per_100km: Number(v.fuel_per_100km) };
+}
+
+function normaliseOrder(o: Order): Order {
+  return { ...o, weight_kg: Number(o.weight_kg) };
+}
+
+export interface ProposalSet {
+  vehicle: Vehicle;
+  plans: TripPlan[];
+}
+
+/** Proposals for one vehicle against the current pool of pending orders. */
+export async function proposeForVehicle(
+  vehicleId: string,
+  options?: Partial<MatchOptions>,
+): Promise<ProposalSet | null> {
+  const [context, vehicles, orders] = await Promise.all([
+    loadContext(),
+    loadVehicles(),
+    loadOrders("new"),
+  ]);
+
+  const vehicle = vehicles.map(normaliseVehicle).find((v) => v.id === vehicleId);
+  if (!vehicle) return null;
+
+  const plans = proposeTrips(
+    vehicle,
+    orders.map(normaliseOrder),
+    context.dist,
+    context.nameOf,
+    { ...DEFAULT_MATCH_OPTIONS, now: new Date(), ...options },
+  );
+  return { vehicle, plans };
+}
+
+/**
+ * One best proposal per vehicle across the whole fleet, without offering the
+ * same order to two drivers.
+ *
+ * Assignment is greedy and iterative: every unassigned vehicle is re-planned
+ * against the orders still unclaimed, the single best plan is taken, and the
+ * round repeats. Re-planning each round matters — a truck whose first choice was
+ * taken usually has a good second route over what is left, and simply filtering
+ * its stale plan list would leave it idle and most orders unserved.
+ *
+ * Greedy rather than globally optimal is a deliberate choice: a driver needs an
+ * answer the second he opens the app, and the result is explainable — the truck
+ * that saves most gets first pick.
+ */
+export async function proposeAcrossFleet(
+  options?: Partial<MatchOptions>,
+): Promise<ProposalSet[]> {
+  const [context, vehiclesRaw, ordersRaw] = await Promise.all([
+    loadContext(),
+    loadVehicles(),
+    loadOrders("new"),
+  ]);
+
+  const matchOptions: MatchOptions = {
+    ...DEFAULT_MATCH_OPTIONS,
+    now: new Date(),
+    ...options,
+  };
+
+  const unassigned = new Map(vehiclesRaw.map(normaliseVehicle).map((v) => [v.id, v]));
+  let pool = ordersRaw.map(normaliseOrder);
+  const result: ProposalSet[] = [];
+
+  // Plans are cached per vehicle and only recomputed when a vehicle's cached
+  // choice used an order that has since been claimed. Without this the loop
+  // re-plans the entire fleet every round, which measured at 14 seconds — far
+  // too slow to sit behind a web request.
+  const cache = new Map<string, TripPlan[]>();
+
+  while (unassigned.size > 0 && pool.length > 0) {
+    let best: { vehicle: Vehicle; plans: TripPlan[] } | null = null;
+
+    for (const vehicle of unassigned.values()) {
+      let plans = cache.get(vehicle.id);
+      if (!plans) {
+        plans = proposeTrips(vehicle, pool, context.dist, context.nameOf, matchOptions);
+        cache.set(vehicle.id, plans);
+      }
+      if (plans.length === 0) continue;
+      if (!best || savingOf(plans[0]!) > savingOf(best.plans[0]!)) {
+        best = { vehicle, plans };
+      }
+    }
+
+    if (!best) break;
+
+    const taken = new Set(best.plans[0]!.order_ids);
+    pool = pool.filter((o) => !taken.has(o.id));
+    unassigned.delete(best.vehicle.id);
+    cache.delete(best.vehicle.id);
+    result.push(best);
+
+    // Invalidate only the vehicles whose cached plans are now stale.
+    for (const [vehicleId, plans] of cache) {
+      if (plans.some((plan) => plan.order_ids.some((id) => taken.has(id)))) {
+        cache.delete(vehicleId);
+      }
+    }
+  }
+
+  return result;
+}
+
+function savingOf(plan: TripPlan): number {
+  return plan.baseline_total_km - plan.total_km;
+}
