@@ -176,37 +176,61 @@ function resolveEndpoints(mentions: Mention[]): {
  * matches a Cyrillic "т" followed by a space. Written units are matched
  * longest-first so "тонны" is not mistaken for a bare "т".
  */
-function parseWeight(text: string): number | null {
-  const normalised = normalise(text);
-  const tonnes = normalised.match(/(\d+(?:[.,]\d+)?)\s*(?:тонн\p{L}*|тн|т)(?![\p{L}])/u);
-  if (tonnes) {
-    const value = Number.parseFloat(tonnes[1]!.replace(",", "."));
-    if (Number.isFinite(value) && value > 0) return Math.round(value * 1000);
-  }
-  const kilos = normalised.match(/(\d+(?:[.,]\d+)?)\s*(?:килограмм\p{L}*|кг)(?![\p{L}])/u);
-  if (kilos) {
-    const value = Number.parseFloat(kilos[1]!.replace(",", "."));
-    if (Number.isFinite(value) && value > 0) return Math.round(value);
+const TONNE_UNIT = String.raw`(?:тонн\p{L}*|тн|т)(?![\p{L}])`;
+const KILO_UNIT = String.raw`(?:килограмм\p{L}*|кило\p{L}*|кг)(?![\p{L}])`;
+
+function firstNumber(text: string, patterns: RegExp[]): number | null {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (!match) continue;
+    const value = Number.parseFloat(match[1]!.replace(",", "."));
+    if (Number.isFinite(value) && value > 0) return value;
   }
   return null;
 }
 
-/**
- * Crude Russian stem: enough to match "арматуры" against "арматура" and "рыбы"
- * against "рыба" without pulling in a morphology library.
- */
-function stemOf(word: string): string {
-  const normalised = normalise(word);
-  if (normalised.length <= 5) return normalised.replace(/[аяоеыиуюэь]$/, "");
-  return normalised.slice(0, Math.max(5, normalised.length - 2));
+function parseWeight(text: string): number | null {
+  const normalised = normalise(text);
+
+  // People write the unit on either side: "3 тонны" but also "кило 400".
+  const tonnes = firstNumber(normalised, [
+    new RegExp(String.raw`(\d+(?:[.,]\d+)?)\s*${TONNE_UNIT}`, "u"),
+    new RegExp(String.raw`${TONNE_UNIT}\s*(\d+(?:[.,]\d+)?)`, "u"),
+  ]);
+  if (tonnes !== null) return Math.round(tonnes * 1000);
+
+  const kilos = firstNumber(normalised, [
+    new RegExp(String.raw`(\d+(?:[.,]\d+)?)\s*${KILO_UNIT}`, "u"),
+    new RegExp(String.raw`${KILO_UNIT}\s*(\d+(?:[.,]\d+)?)`, "u"),
+  ]);
+  if (kilos !== null) return Math.round(kilos);
+
+  return null;
 }
 
-function parseCargo(text: string): string | null {
-  const haystack = normalise(text);
-  // A multi-word phrase matches only if every one of its stems is present, and
-  // the longest matching phrase wins so "молочная продукция" beats "продукты".
+/**
+ * Whether two Russian words are inflections of each other.
+ *
+ * Stemming by chopping a fixed number of characters does not survive real
+ * inflection: "молочная" and "молочную" diverge mid-word, and "щебень" loses its
+ * vowel entirely in "щебня". Comparing the shared prefix handles both, and the
+ * length guard is what keeps it honest — without it "вода" would match
+ * "водитель", which shares the same three letters.
+ */
+function sameWord(a: string, b: string): boolean {
+  if (Math.abs(a.length - b.length) > 3) return false;
+  let common = 0;
+  while (common < a.length && common < b.length && a[common] === b[common]) common++;
+  return common >= 3;
+}
+
+function parseCargo(text: string, tokens: string[]): string | null {
+  // A multi-word phrase matches only if every one of its words appears, and the
+  // longest matching phrase wins so "молочная продукция" beats "продукты".
   const found = CARGO_WORDS.filter((phrase) =>
-    phrase.split(/\s+/).every((word) => haystack.includes(stemOf(word))),
+    normalise(phrase)
+      .split(/\s+/)
+      .every((word) => tokens.some((token) => sameWord(word, token))),
   ).sort((a, b) => b.length - a.length);
   return found[0] ?? null;
 }
@@ -255,7 +279,7 @@ export function parseWithRules(text: string, context: ParseContext): ParsedOrder
   const mentions = findMentions(tokens, context.settlements);
   const { origin, destination } = resolveEndpoints(mentions);
 
-  const cargo = parseCargo(text);
+  const cargo = parseCargo(text, tokens);
   const weight_kg = parseWeight(text);
   const { ready, deadline } = parseWindow(text, context.now);
 

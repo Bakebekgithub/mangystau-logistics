@@ -70,6 +70,24 @@ describe("the dictionary parser reads real messages", () => {
   test("converts fractional tonnes", () => {
     assert.equal(parse("2,5 тонны цемента из Актау в Шетпе").weight_kg, 2500);
   });
+
+  test("reads the unit written before the number", () => {
+    const order = parse("Магазину в Сенеке нужно завезти продуктов, кило 400. Забрать с базы в Актау");
+    assert.equal(order.weight_kg, 400);
+    assert.equal(order.origin_id, "aktau");
+    assert.equal(order.destination_id, "senek");
+  });
+
+  test("handles a cargo word that loses a vowel when inflected", () => {
+    // "щебень" becomes "щебня" — a fixed-length stem never matches both.
+    assert.equal(parse("12 тонн щебня, Шетпе в Бейнеу").cargo, "щебень");
+    assert.equal(parse("нужен песка самосвал из Актау в Курык").cargo, "песок");
+  });
+
+  test("does not mistake an unrelated word for a cargo it shares letters with", () => {
+    // "водитель" shares its first three letters with "вода".
+    assert.equal(parse("нужен водитель из Актау в Шетпе").cargo, null);
+  });
 });
 
 describe("the parser admits what it does not know", () => {
