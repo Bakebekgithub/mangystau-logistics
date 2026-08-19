@@ -27,7 +27,7 @@ export default async function ShipperPage() {
       <TopBar current="shipper" />
       <main className="mx-auto max-w-4xl space-y-7 px-4 py-6">
         <section>
-          <h1 className="text-h1 text-ink-50">Что с моими грузами</h1>
+          <h1 className="text-h1 text-ink-900">Что с моими грузами</h1>
           <div className="mt-4 grid grid-cols-3 gap-3">
             <Surface className="p-4">
               <Metric label="Ищем машину" value={counts.searching} tone={counts.searching > 0 ? "empty" : "neutral"} />
@@ -63,14 +63,14 @@ export default async function ShipperPage() {
                   <Surface key={order.id} interactive className="animate-rise p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="text-[0.9375rem] font-semibold text-ink-50">
+                        <div className="text-[0.9375rem] font-semibold text-ink-900">
                           {order.origin_name} → {order.destination_name}
                         </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-ink-400">
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-ink-500">
                           <span>{order.cargo}</span>
                           <span className="tnum">{weight(order.weight_kg)}</span>
                           {order.km !== null ? <span className="tnum">{km(order.km)}</span> : null}
-                          {order.needs_cooling ? <span className="text-accent">рефрижератор</span> : null}
+                          {order.needs_cooling ? <span className="text-brand">рефрижератор</span> : null}
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
@@ -85,8 +85,29 @@ export default async function ShipperPage() {
                       {order.parsed_by === "ai" ? "разобрано ИИ" : "разобрано по словарю"}
                     </div>
 
+                    {order.carrier_plate ? (
+                      <div className="mt-3 flex items-center gap-2.5 rounded-control border border-laden-border bg-laden-soft px-3 py-2.5">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[0.6875rem] font-bold text-laden-ink">
+                          {order.carrier_plate.slice(0, 3)}
+                        </span>
+                        <span className="min-w-0 text-small">
+                          <span className="block font-medium text-ink-900">
+                            {order.carrier_name}
+                          </span>
+                          <span className="block text-ink-600">
+                            {order.carrier_plate} ·{" "}
+                            {order.status === "in_transit"
+                              ? "уже в пути"
+                              : order.status === "delivered"
+                                ? "доставлено"
+                                : "принял заявку"}
+                          </span>
+                        </span>
+                      </div>
+                    ) : null}
+
                     {order.raw_text ? (
-                      <p className="mt-2.5 border-l-2 border-ink-750 pl-3 text-small italic text-ink-500">
+                      <p className="mt-2.5 border-l-2 border-ink-200 pl-3 text-small italic text-ink-500">
                         {order.raw_text}
                       </p>
                     ) : null}

@@ -8,6 +8,7 @@ import type { MapArc, MapPin, MapSettlement } from "./RegionMap";
 import { Badge, EmptyState, LadenBar, Metric, RouteTimeline, Surface, buttonClass } from "./ui";
 import type { OrderView, TripStopView, TripView } from "@/lib/queries";
 import { duration, km, kzt, litres, percent, routeSummary, vehicleLabel, weight } from "@/lib/format";
+import { ASSUMPTIONS } from "@/lib/engine/economics";
 
 const KIND: Record<TripView["kind"], { label: string; tone: "laden" | "accent" | "neutral" }> = {
   backhaul: { label: "Обратная загрузка", tone: "laden" },
@@ -127,10 +128,10 @@ export function DriverConsole({
   return (
     <div className="flex flex-col-reverse lg:h-[calc(100vh-3.5rem)] lg:flex-row">
       {/* List — first in the DOM on mobile so a driver lands on the offers. */}
-      <div className="flex w-full flex-col border-ink-800 lg:w-[27rem] lg:shrink-0 lg:border-r xl:w-[30rem]">
-        <div className="flex items-center justify-between gap-3 border-b border-ink-800 px-4 py-3">
+      <div className="flex w-full flex-col border-ink-200 lg:w-[27rem] lg:shrink-0 lg:border-r xl:w-[30rem]">
+        <div className="flex items-center justify-between gap-3 border-b border-ink-200 px-4 py-3">
           <div>
-            <h1 className="text-h3 text-ink-50">
+            <h1 className="text-h3 text-ink-900">
               {active.length > 0 ? "Мой рейс" : "Доступные рейсы"}
             </h1>
             <p className="text-small text-ink-500">
@@ -184,16 +185,16 @@ function UnplannedStrip({ orders }: { orders: OrderView[] }) {
   return (
     <Surface accent className="p-3.5">
       <div className="flex items-center gap-2">
-        <span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-accent" />
-        <span className="text-caption uppercase text-accent">Ждут подбора машины</span>
+        <span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-brand" />
+        <span className="text-caption uppercase text-brand">Ждут подбора машины</span>
       </div>
       <ul className="mt-2.5 space-y-1.5">
         {orders.map((order) => (
           <li key={order.id} className="flex items-baseline justify-between gap-3 text-small">
-            <span className="min-w-0 truncate text-ink-200">
+            <span className="min-w-0 truncate text-ink-700">
               {order.origin_name} → {order.destination_name}
             </span>
-            <span className="shrink-0 tnum text-ink-400">
+            <span className="shrink-0 tnum text-ink-500">
               {order.cargo}, {weight(order.weight_kg)}
             </span>
           </li>
@@ -226,12 +227,19 @@ function ProposalCard({
     <Surface
       accent={selected}
       interactive
-      className={`animate-rise cursor-pointer p-4 ${selected ? "ring-1 ring-accent-dim/50" : ""}`}
+      className={`animate-rise cursor-pointer p-4 ${selected ? "ring-1 ring-brand-border/50" : ""}`}
     >
       <div onClick={onSelect}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[0.9375rem] font-semibold leading-snug text-ink-50">{summary}</div>
+            {trip.has_typed_order ? (
+              <div className="mb-1.5">
+                <Badge tone="accent" dot>
+                  Здесь ваша заявка
+                </Badge>
+              </div>
+            ) : null}
+            <div className="text-[0.9375rem] font-semibold leading-snug text-ink-900">{summary}</div>
             <div className="mt-1 text-small text-ink-500">
               {trip.plate} · {trip.capacity_kg / 1000} т {vehicleLabel(trip.vehicle_kind)}
             </div>
@@ -250,11 +258,16 @@ function ProposalCard({
           />
         </div>
 
+        <p className="mt-2 text-[0.6875rem] text-ink-500">
+          Ориентир: топливо {litres(trip.fuel_l)} × {ASSUMPTIONS.dieselPriceKztPerL} ₸ ÷{" "}
+          {ASSUMPTIONS.fuelShareOfOperatingCost} — итоговую цену стороны согласуют сами
+        </p>
+
         <div className="mt-3.5">
           <LadenBar ladenKm={trip.laden_km} emptyKm={trip.empty_km} />
         </div>
 
-        <p className="mt-3 rounded-control bg-ink-850/70 px-3 py-2.5 text-small text-ink-300">
+        <p className="mt-3 rounded-control bg-ink-50 px-3 py-2.5 text-small text-ink-400">
           {trip.explanation}
         </p>
       </div>
@@ -281,7 +294,7 @@ function ActiveTripCard({ trip, price }: { trip: TripView; price: number }) {
     <Surface accent className="p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[0.9375rem] font-semibold text-ink-50">
+          <div className="text-[0.9375rem] font-semibold text-ink-900">
             {routeSummary([trip.at_name, ...trip.stops.map((s) => s.settlement_name), trip.at_name])}
           </div>
           <div className="mt-1 text-small text-ink-500">
@@ -312,10 +325,10 @@ function ActiveTripCard({ trip, price }: { trip: TripView; price: number }) {
           {busy ? "Начинаю…" : "Выехал"}
         </button>
       ) : next ? (
-        <div className="mt-4 rounded-control border border-accent-dim/50 bg-accent-faint p-3.5">
-          <div className="text-caption uppercase text-accent">Следующая точка</div>
-          <div className="mt-1 text-h3 text-ink-50">{next.settlement_name}</div>
-          <div className="text-small text-ink-300">
+        <div className="mt-4 rounded-control border border-brand-border/50 bg-brand-soft p-3.5">
+          <div className="text-caption uppercase text-brand">Следующая точка</div>
+          <div className="mt-1 text-h3 text-ink-900">{next.settlement_name}</div>
+          <div className="text-small text-ink-400">
             {next.action === "pickup" ? "Забрать" : "Выгрузить"}
             {next.cargo ? ` ${next.cargo}` : ""}
             {next.weight_kg ? `, ${weight(next.weight_kg)}` : ""}
@@ -329,14 +342,14 @@ function ActiveTripCard({ trip, price }: { trip: TripView; price: number }) {
           </button>
         </div>
       ) : (
-        <p className="mt-4 rounded-control bg-laden-faint px-3 py-2.5 text-small text-laden-ink">
+        <p className="mt-4 rounded-control bg-laden-soft px-3 py-2.5 text-small text-laden-ink">
           Все точки пройдены. Рейс завершён: {km(trip.total_km)}, порожний {km(trip.empty_km)},
           экономия {litres(trip.fuel_saved_l)}.
         </p>
       )}
       {error ? <p className="mt-1.5 text-small text-danger">{error}</p> : null}
 
-      <div className="mt-4 border-t border-ink-800 pt-3.5">
+      <div className="mt-4 border-t border-ink-200 pt-3.5">
         <RouteTimeline stops={stopsForTimeline(trip.stops)} origin={trip.at_name} />
       </div>
     </Surface>
@@ -346,7 +359,7 @@ function ActiveTripCard({ trip, price }: { trip: TripView; price: number }) {
 /** Explains the two line styles, so the map is readable without a caption. */
 function MapLegend({ trip }: { trip: TripView }) {
   return (
-    <div className="pointer-events-none absolute bottom-3 left-3 rounded-control border border-ink-750 bg-ink-950/85 px-3 py-2.5 backdrop-blur">
+    <div className="pointer-events-none absolute bottom-3 left-3 rounded-control border border-ink-200 bg-white/95 px-3 py-2.5 backdrop-blur">
       <div className="flex items-center gap-4 text-[0.6875rem]">
         <span className="flex items-center gap-1.5 text-laden-ink">
           <span className="h-0.5 w-5 rounded bg-laden" /> с грузом
@@ -355,7 +368,7 @@ function MapLegend({ trip }: { trip: TripView }) {
           <span className="h-0.5 w-5 rounded border-t-2 border-dashed border-empty-ink" /> порожний
         </span>
       </div>
-      <div className="mt-1.5 tnum text-[0.6875rem] text-ink-400">
+      <div className="mt-1.5 tnum text-[0.6875rem] text-ink-500">
         {km(trip.total_km)} · порожний {km(trip.empty_km)} · оплачиваемых {percent(trip.paid_km_share)}
       </div>
     </div>

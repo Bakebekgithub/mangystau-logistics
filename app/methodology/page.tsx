@@ -36,8 +36,8 @@ export default async function MethodologyPage() {
       <TopBar />
       <main className="mx-auto max-w-3xl space-y-8 px-4 py-8">
         <header>
-          <h1 className="text-h1 text-ink-50">Методология</h1>
-          <p className="mt-2 text-body text-ink-300">
+          <h1 className="text-h1 text-ink-900">Методология</h1>
+          <p className="mt-2 text-body text-ink-400">
             Откуда берётся каждая цифра, что здесь измерено, а что смоделировано, и на каких
             допущениях стоит экономика. Если что-то из этого выглядит спорно — здесь видно, где
             именно спорить.
@@ -170,7 +170,7 @@ export default async function MethodologyPage() {
         </Section>
 
         <Section title="Как движок собирает рейс">
-          <p className="text-body text-ink-300">
+          <p className="text-body text-ink-400">
             Для свободной машины берётся пул заявок, которые она физически может взять: вес
             в пределах вместимости, рефрижератор для скоропортящегося, срок ещё не истёк.
             Дальше перебираются комбинации из нескольких заявок, и для каждой ищется порядок
@@ -179,7 +179,7 @@ export default async function MethodologyPage() {
             лучшего найденного варианта. Для того числа заявок, которое водитель берёт за раз,
             это даёт точный оптимум за миллисекунды, а не эвристику, которую пришлось бы защищать.
           </p>
-          <p className="mt-3 text-body text-ink-300">
+          <p className="mt-3 text-body text-ink-400">
             Рейс не предлагается, если он проезжает больше, чем те же заявки по отдельности.
             Распределение по парку жадное: машина, чей рейс экономит больше, выбирает первой,
             и её заявки уходят из пула. Это объяснимо словами — «этот рейс экономит больше,
@@ -189,7 +189,7 @@ export default async function MethodologyPage() {
         </Section>
 
         <Section title="Разбор заявки из текста">
-          <p className="text-body text-ink-300">
+          <p className="text-body text-ink-400">
             Сообщение отправителя разбирается двумя равноправными реализациями одного контракта.
             Основная — Claude, ограниченный схемой, в которой пункты заданы перечислением
             настоящих идентификаторов: модель физически не может вернуть пункт, которого нет
@@ -204,21 +204,21 @@ export default async function MethodologyPage() {
         </Section>
 
         <Section title="Что осталось за рамками хакатона">
-          <p className="text-body text-ink-300">
+          <p className="text-body text-ink-400">
             Регистрация и пароли, чат между сторонами, оплата, реальные GPS-трекеры, мобильные
             приложения в сторах, документооборот и накладные. Ничего из этого не сделано, и мы
             это не выдаём за сделанное.
           </p>
         </Section>
 
-        <footer className="border-t border-ink-800 pt-5">
+        <footer className="border-t border-ink-200 pt-5">
           <p className="text-small text-ink-500">
             Данные о населённых пунктах и границах — OpenStreetMap, лицензия ODbL 1.0.
             Дорожные расстояния — OSRM на дорожной сети OSM.
           </p>
           <Link
             href="/"
-            className="mt-3 inline-block text-small font-medium text-accent underline decoration-accent-dim underline-offset-4"
+            className="mt-3 inline-block text-small font-medium text-brand underline decoration-brand-border underline-offset-4"
           >
             Вернуться к продукту
           </Link>
@@ -239,7 +239,7 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="text-h2 text-ink-50">
+      <h2 className="text-h2 text-ink-900">
         {title}
         {tone === "warn" ? (
           <span className="ml-2.5 align-middle">
@@ -266,11 +266,11 @@ function Row({
   return (
     <Surface className="p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <span className="text-h3 text-ink-100">{label}</span>
-        <span className="tnum text-metric text-ink-50">{value}</span>
+        <span className="text-h3 text-ink-900">{label}</span>
+        <span className="tnum text-metric text-ink-900">{value}</span>
       </div>
       <div className="mt-1 text-caption uppercase text-ink-500">{source}</div>
-      <p className="mt-2.5 text-small text-ink-300">{children}</p>
+      <p className="mt-2.5 text-small text-ink-400">{children}</p>
     </Surface>
   );
 }
@@ -289,18 +289,18 @@ function Claim({
   children: React.ReactNode;
 }) {
   const ring = {
-    laden: "border-laden-dim/70",
-    accent: "border-accent-dim/70",
-    neutral: "border-ink-750",
+    laden: "border-laden-border/70",
+    accent: "border-brand-border/70",
+    neutral: "border-ink-200",
   }[tone];
   const numberColor = {
     laden: "text-laden-ink",
-    accent: "text-accent",
-    neutral: "text-ink-200",
+    accent: "text-brand",
+    neutral: "text-ink-700",
   }[tone];
 
   return (
-    <div className={`rounded-card border bg-ink-900/70 p-4 ${ring}`}>
+    <div className={`rounded-card border bg-white p-4 ${ring}`}>
       <div className="flex items-start gap-3.5">
         <span
           className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-small font-semibold ${ring} ${numberColor}`}
@@ -309,10 +309,10 @@ function Claim({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <span className="text-h3 text-ink-100">{title}</span>
+            <span className="text-h3 text-ink-900">{title}</span>
             <span className={`tnum text-metric ${numberColor}`}>{value}</span>
           </div>
-          <p className="mt-2 text-small text-ink-300">{children}</p>
+          <p className="mt-2 text-small text-ink-400">{children}</p>
         </div>
       </div>
     </div>

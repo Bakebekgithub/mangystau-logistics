@@ -1,121 +1,106 @@
 import type { Config } from "tailwindcss";
 
 /**
- * One accent, two semantics, everything else neutral.
+ * Light, Swiss-minimal, grid-based — the reference being the sites people already
+ * know from ride-hailing and delivery apps.
  *
- * The interface is dark for three reasons that are about this product rather
- * than fashion: routes and map geometry read best against a dark canvas; the
- * driver screen gets used in a cab, often at night; and it moves the product away
- * from the light-card dashboard look that reads as generic.
+ * Two decisions worth recording:
  *
- * `laden` and `empty` are not decoration — they are the product's whole argument
- * (a paid kilometre versus an empty one), so they are the only saturated colours
- * allowed near data.
+ * 1. Light rather than dark. A dark canvas looked good on a laptop but washed out
+ *    when projected in a lit room, and putting copy over a dark map made both
+ *    unreadable. The map belongs inside the working screens, not behind text.
+ *
+ * 2. The `laden` / `empty` pair was chosen by running a palette validator, not by
+ *    eye. Plain green against plain orange separates by only ΔE 7 under
+ *    deuteranopia — for roughly one man in twelve, the single most important
+ *    distinction in this product would have been invisible. This pair separates
+ *    by 11.8 at worst, sits inside the light-mode lightness band, and clears 3:1
+ *    contrast against white.
+ *
+ * The `ink` scale runs the conventional direction: 50 is the lightest surface,
+ * 900 the darkest text.
  */
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        // Canvas and elevation. Cool, near-black, with a hint of blue so the
-        // accent sits in the same family rather than fighting it.
         ink: {
-          950: "#080A0F",
-          900: "#0B0E14",
-          850: "#11151D",
-          800: "#161B25",
-          750: "#1D2430",
-          700: "#252E3C",
-          600: "#33404F",
-          500: "#4A5A6B",
-          400: "#6B7C8F",
-          300: "#94A3B4",
-          200: "#BFCAD6",
-          100: "#DFE6ED",
-          50: "#F2F5F8",
+          50: "#F7F9FC",
+          100: "#EEF2F7",
+          200: "#E1E7EF",
+          300: "#CBD4E1",
+          400: "#94A2B8",
+          500: "#64748B",
+          600: "#475569",
+          700: "#334154",
+          800: "#1E293B",
+          900: "#0F172A",
         },
-        // The single brand accent: movement, transport, "go".
-        accent: {
-          DEFAULT: "#19E5C4",
-          hover: "#3DEDD1",
-          press: "#0FC7AA",
-          dim: "#0E7566",
-          faint: "#0A2E2A",
+        /** Actions, links, brand. Never used to encode data. */
+        brand: {
+          DEFAULT: "#2563EB",
+          hover: "#1D4ED8",
+          press: "#1E40AF",
+          soft: "#EFF5FF",
+          border: "#BFD4FE",
         },
-        /**
-         * A paid kilometre, and an empty one.
-         *
-         * These two are the only saturated colours allowed near data, and the
-         * pair was chosen by running the palette validator rather than by eye.
-         * The obvious green/orange choice separates by only ΔE 7 under
-         * deuteranopia — for roughly one man in twelve, the single most important
-         * distinction in this product would have been unreadable. Teal against
-         * orange separates by ΔE 14.8, and both steps sit inside the dark-mode
-         * lightness band with ≥3:1 contrast against the canvas.
-         *
-         * `DEFAULT` is the fill step; `ink` is the lighter step used for text,
-         * which needs more contrast than a fill does.
-         */
+        /** A paid kilometre. */
         laden: {
-          DEFAULT: "#11A896",
-          ink: "#3BDCC4",
-          dim: "#0B5E54",
-          faint: "#08221F",
+          DEFAULT: "#0E8A6F",
+          ink: "#0A6F59",
+          soft: "#E7F6F1",
+          border: "#A9DFD1",
         },
+        /** An empty one — the cost the product exists to remove. */
         empty: {
-          DEFAULT: "#DD6B12",
-          ink: "#FF9E52",
-          dim: "#7A3B0A",
-          faint: "#241207",
+          DEFAULT: "#C2560D",
+          ink: "#9C440A",
+          soft: "#FDF0E6",
+          border: "#F5C9A3",
         },
-        danger: { DEFAULT: "#FF5C5C", faint: "#2E1214" },
-        warn: { DEFAULT: "#FFC53D", faint: "#2E2410" },
+        danger: { DEFAULT: "#DC2626", ink: "#B91C1C", soft: "#FEF2F2", border: "#FECACA" },
+        warn: { DEFAULT: "#B45309", ink: "#92400E", soft: "#FFFBEB", border: "#FDE68A" },
       },
       fontFamily: {
         sans: [
-          "-apple-system", "BlinkMacSystemFont", "Inter", "Segoe UI",
+          "Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI",
           "Roboto", "Helvetica Neue", "sans-serif",
         ],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       fontSize: {
-        // A deliberate scale rather than ad-hoc sizes at call sites.
-        "display": ["2.75rem", { lineHeight: "1.05", letterSpacing: "-0.03em", fontWeight: "600" }],
-        "h1": ["2rem", { lineHeight: "1.12", letterSpacing: "-0.025em", fontWeight: "600" }],
-        "h2": ["1.375rem", { lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "600" }],
-        "h3": ["1.0625rem", { lineHeight: "1.3", letterSpacing: "-0.01em", fontWeight: "600" }],
-        "body": ["0.9375rem", { lineHeight: "1.55" }],
-        "small": ["0.8125rem", { lineHeight: "1.5" }],
-        "caption": ["0.6875rem", { lineHeight: "1.4", letterSpacing: "0.06em", fontWeight: "600" }],
-        "metric": ["1.75rem", { lineHeight: "1", letterSpacing: "-0.03em", fontWeight: "650" }],
-        "metric-lg": ["2.5rem", { lineHeight: "1", letterSpacing: "-0.035em", fontWeight: "650" }],
+        display: ["3rem", { lineHeight: "1.05", letterSpacing: "-0.035em", fontWeight: "700" }],
+        h1: ["1.875rem", { lineHeight: "1.15", letterSpacing: "-0.025em", fontWeight: "700" }],
+        h2: ["1.375rem", { lineHeight: "1.25", letterSpacing: "-0.018em", fontWeight: "650" }],
+        h3: ["1.0625rem", { lineHeight: "1.35", letterSpacing: "-0.01em", fontWeight: "600" }],
+        body: ["1rem", { lineHeight: "1.55" }],
+        small: ["0.875rem", { lineHeight: "1.5" }],
+        caption: ["0.6875rem", { lineHeight: "1.4", letterSpacing: "0.06em", fontWeight: "600" }],
+        metric: ["1.75rem", { lineHeight: "1", letterSpacing: "-0.03em", fontWeight: "700" }],
+        "metric-lg": ["2.5rem", { lineHeight: "1", letterSpacing: "-0.035em", fontWeight: "700" }],
       },
       borderRadius: {
-        card: "14px",
+        card: "16px",
         control: "10px",
         pill: "999px",
       },
       boxShadow: {
-        card: "0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.6)",
-        lift: "0 2px 4px rgba(0,0,0,0.5), 0 16px 40px -16px rgba(0,0,0,0.7)",
-        glow: "0 0 0 1px rgba(25,229,196,0.35), 0 8px 32px -8px rgba(25,229,196,0.25)",
+        card: "0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)",
+        lift: "0 4px 12px -2px rgba(15,23,42,0.08), 0 12px 32px -8px rgba(15,23,42,0.12)",
+        control: "0 1px 2px rgba(15,23,42,0.05)",
       },
       transitionTimingFunction: {
-        // One easing for everything, so motion feels like one system.
         swift: "cubic-bezier(0.32, 0.72, 0, 1)",
       },
       keyframes: {
-        "draw-route": {
-          from: { strokeDashoffset: "var(--route-length, 1000)" },
-          to: { strokeDashoffset: "0" },
-        },
-        "rise": {
-          from: { opacity: "0", transform: "translateY(6px)" },
+        rise: {
+          from: { opacity: "0", transform: "translateY(8px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
         "pulse-dot": {
           "0%, 100%": { opacity: "1", transform: "scale(1)" },
-          "50%": { opacity: "0.45", transform: "scale(1.35)" },
+          "50%": { opacity: "0.4", transform: "scale(1.4)" },
         },
         shimmer: {
           from: { backgroundPosition: "-200% 0" },
@@ -123,8 +108,7 @@ const config: Config = {
         },
       },
       animation: {
-        "draw-route": "draw-route 1.1s cubic-bezier(0.32, 0.72, 0, 1) forwards",
-        rise: "rise 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
+        rise: "rise 0.32s cubic-bezier(0.32, 0.72, 0, 1) both",
         "pulse-dot": "pulse-dot 2s ease-in-out infinite",
         shimmer: "shimmer 1.4s linear infinite",
       },

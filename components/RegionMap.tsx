@@ -164,10 +164,10 @@ export default function RegionMap({
         <GeoJSON
           data={REGION}
           style={{
-            color: "#33404F",
+            color: "#CBD4E1",
             weight: 1.25,
-            fillColor: "#0F131A",
-            fillOpacity: 0.85,
+            fillColor: "#EEF2F7",
+            fillOpacity: 0.75,
             dashArray: "1 0",
           }}
         />
@@ -180,7 +180,7 @@ export default function RegionMap({
               key={arc.id}
               positions={arcPoints(arc.from, arc.to)}
               pathOptions={{
-                color: arc.laden ? "#11A896" : "#DD6B12",
+                color: arc.laden ? "#0E8A6F" : "#C2560D",
                 weight: dimmed ? 1 : width,
                 opacity: dimmed ? 0.14 : arc.laden ? 0.9 : 0.75,
                 dashArray: arc.laden ? undefined : "5 6",
@@ -204,9 +204,9 @@ export default function RegionMap({
               center={[settlement.lat, settlement.lon]}
               radius={settlementRadius(settlement.place, settlement.population)}
               pathOptions={{
-                color: big ? "#BFCAD6" : "#4A5A6B",
+                color: big ? "#334154" : "#94A2B8",
                 weight: big ? 1.5 : 1,
-                fillColor: big ? "#252E3C" : "#161B25",
+                fillColor: big ? "#FFFFFF" : "#FFFFFF",
                 fillOpacity: 1,
               }}
               eventHandlers={
@@ -218,7 +218,7 @@ export default function RegionMap({
               <Tooltip direction="top" offset={[0, -4]}>
                 <span className="font-medium">{settlement.name_ru}</span>
                 {settlement.population ? (
-                  <span className="text-ink-400">
+                  <span className="text-ink-500">
                     {" "}
                     · {settlement.population.toLocaleString("ru-RU")} чел.
                   </span>
@@ -234,9 +234,9 @@ export default function RegionMap({
             center={[pin.lat, pin.lon]}
             radius={pin.kind === "vehicle" ? 7 : 6}
             pathOptions={{
-              color: pin.kind === "vehicle" ? "#19E5C4" : pin.kind === "pickup" ? "#19E5C4" : "#DFE6ED",
+              color: pin.kind === "vehicle" ? "#2563EB" : pin.kind === "pickup" ? "#2563EB" : "#0F172A",
               weight: 2.5,
-              fillColor: pin.kind === "dropoff" ? "#0B0E14" : "#19E5C4",
+              fillColor: pin.kind === "dropoff" ? "#FFFFFF" : "#2563EB",
               fillOpacity: pin.kind === "dropoff" ? 1 : 0.9,
             }}
           >
@@ -281,7 +281,7 @@ function SettlementLabels({ settlements }: { settlements: MapSettlement[] }) {
             offset={[8, 0]}
             className="!border-none !bg-transparent !shadow-none"
           >
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-300">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
               {settlement.name_ru}
             </span>
           </Tooltip>

@@ -26,7 +26,27 @@ export interface OrderView {
   raw_text: string | null;
   parsed_by: string | null;
   km: number | null;
+  /** Who is carrying it, once a driver has taken the trip. */
+  carrier_name?: string | null;
+  carrier_plate?: string | null;
+  trip_id?: string | null;
 }
+
+/**
+ * Joins the carrier onto an order, for the shipper's "who is carrying my cargo"
+ * question. Written once and reused by both order queries.
+ */
+const CARRIER_JOIN = `
+  LEFT JOIN LATERAL (
+    SELECT c.name AS carrier_name, v.plate AS carrier_plate, tr.id AS trip_id
+    FROM trip_stops ts
+    JOIN trips tr ON tr.id = ts.trip_id
+                 AND tr.status IN ('accepted', 'in_transit', 'completed')
+    JOIN vehicles v ON v.id = tr.vehicle_id
+    JOIN carriers c ON c.id = v.carrier_id
+    WHERE ts.order_id = o.id
+    LIMIT 1
+  ) carrier ON true`;
 
 export async function listOrders(status?: OrderStatus, limit = 200): Promise<OrderView[]> {
   const db = getDb();
@@ -63,11 +83,13 @@ export async function listTypedOrders(limit = 25): Promise<OrderView[]> {
             o.destination_id, sd.name_ru AS destination_name, sd.place AS destination_place,
             o.cargo, o.weight_kg, o.needs_cooling, o.ready_at, o.deadline_at,
             o.status, o.raw_text, o.parsed_by,
-            d.km
+            d.km,
+            carrier.carrier_name, carrier.carrier_plate, carrier.trip_id
      FROM orders o
      JOIN settlements so ON so.id = o.origin_id
      JOIN settlements sd ON sd.id = o.destination_id
      LEFT JOIN distances d ON d.from_id = o.origin_id AND d.to_id = o.destination_id
+     ${CARRIER_JOIN}
      WHERE o.raw_text IS NOT NULL
      ORDER BY o.created_at DESC
      LIMIT ${limit}`,
@@ -145,6 +167,12 @@ export interface TripView {
   accepted_at: string | null;
   at_lat: number;
   at_lon: number;
+  /**
+   * Whether this trip carries an order somebody typed in, as opposed to one from
+   * the demand generator. Those go to the top of the carrier's list so a person
+   * who just placed an order can immediately see it picked up.
+   */
+  has_typed_order: boolean;
   stops: TripStopView[];
 }
 
@@ -156,13 +184,20 @@ export async function listTrips(status?: TripView["status"]): Promise<TripView[]
             c.name AS carrier_name, s.name_ru AS at_name, s.lat AS at_lat, s.lon AS at_lon,
             t.total_km, t.laden_km, t.empty_km, t.baseline_total_km, t.baseline_empty_km,
             t.fuel_l, t.fuel_saved_l, t.money_saved_kzt, t.paid_km_share, t.minutes,
-            t.explanation, t.accepted_at
+            t.explanation, t.accepted_at,
+            EXISTS (
+              SELECT 1 FROM trip_stops ts
+              JOIN orders o ON o.id = ts.order_id
+              WHERE ts.trip_id = t.id AND o.raw_text IS NOT NULL
+            ) AS has_typed_order
      FROM trips t
      JOIN vehicles v ON v.id = t.vehicle_id
      JOIN carriers c ON c.id = v.carrier_id
      JOIN settlements s ON s.id = v.at_id
      ${status ? "WHERE t.status = $1" : ""}
-     ORDER BY (t.baseline_total_km - t.total_km) DESC`,
+     -- Trips carrying a hand-typed order first: that is the one the person in
+     -- front of the screen is waiting to see picked up.
+     ORDER BY has_typed_order DESC, (t.baseline_total_km - t.total_km) DESC`,
     status ? [status] : [],
   );
   if (trips.length === 0) return [];

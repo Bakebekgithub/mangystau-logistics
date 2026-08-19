@@ -3,60 +3,51 @@
 @tailwind utilities;
 
 /*
- * The app commits to a dark interface rather than following the OS theme: the
- * map, the route geometry and the laden/empty colour language are all designed
- * against a dark canvas, and a light variant would be a different product, not a
- * palette swap.
+ * Light, high-contrast, grid-based.
+ *
+ * The interface commits to a single light theme rather than following the OS: the
+ * map styling, the laden/empty colour language and the chart marks were all
+ * chosen and validated against a white surface, so a dark variant would be a
+ * different set of decisions rather than a palette flip. Light also survives a
+ * projector in a lit room, which is where this gets presented.
  */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
-html,
-body {
-  @apply bg-ink-950 text-ink-100 antialiased;
-  font-feature-settings: "cv11", "ss01";
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  /* A very faint radial wash keeps large dark areas from reading as flat. */
-  background-image:
-    radial-gradient(900px 500px at 15% -5%, rgba(25, 229, 196, 0.06), transparent 60%),
-    radial-gradient(700px 400px at 95% 0%, rgba(52, 208, 122, 0.045), transparent 55%);
-  background-attachment: fixed;
+  @apply bg-white text-ink-900 antialiased;
 }
 
 ::selection {
-  background: rgba(25, 229, 196, 0.28);
+  background: theme("colors.brand.soft");
+  color: theme("colors.brand.press");
 }
 
-/* Focus is visible everywhere, and always the same shape. */
+/* One focus treatment everywhere. */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid theme("colors.accent.DEFAULT");
+  outline: 2px solid theme("colors.brand.DEFAULT");
   outline-offset: 2px;
   border-radius: 8px;
 }
 
-/* Numbers in tables and metrics must not jitter as they update. */
+/* Figures must not jitter as they update. */
 .tnum {
   font-variant-numeric: tabular-nums;
 }
 
-/* Thin scrollbars so side panels don't grow a chunky light-grey bar. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: theme("colors.ink.700") transparent;
-}
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-*::-webkit-scrollbar-thumb {
-  background: theme("colors.ink.700");
-  border-radius: 999px;
-}
-*::-webkit-scrollbar-track {
-  background: transparent;
+/* Anything clickable says so. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+a[href],
+label[for],
+select:not(:disabled),
+summary {
+  cursor: pointer;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -70,12 +61,11 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
- * Leaflet.
+ * Leaflet
  *
- * Only the pieces the map actually needs are inlined here, so the page loads no
- * external stylesheet. No tile layer is used either — the region outline is drawn
- * from our own GeoJSON — which is what keeps the demo independent of any
- * third-party server during a presentation.
+ * Only what the map needs is inlined, so no external stylesheet is fetched. No
+ * tile layer is used either — the region outline comes from our own GeoJSON —
+ * which keeps the demo independent of any third-party server while presenting.
  * ------------------------------------------------------------------------- */
 
 .leaflet-container {
@@ -84,7 +74,7 @@ body {
   overflow: hidden;
   position: relative;
   touch-action: none;
-  background: transparent;
+  background: theme("colors.ink.50");
   font: inherit;
   outline: none;
 }
@@ -146,23 +136,17 @@ body {
   transform-origin: 0 0;
 }
 
-/* Tooltips styled as product surfaces rather than Leaflet defaults. */
+/* Tooltips styled as product surfaces, not Leaflet defaults. */
 .leaflet-tooltip {
   position: absolute;
   padding: 6px 9px;
-  background: theme("colors.ink.850");
-  border: 1px solid theme("colors.ink.700");
+  background: #ffffff;
+  border: 1px solid theme("colors.ink.200");
   border-radius: 8px;
-  color: theme("colors.ink.100");
+  color: theme("colors.ink.800");
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 4px 16px -4px rgba(15, 23, 42, 0.18);
   font-size: 12px;
   line-height: 1.35;
-}
-
-/* A route that draws itself in when it appears. */
-.route-draw {
-  stroke-dasharray: var(--route-length, 2000);
-  animation: draw-route 1.1s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }

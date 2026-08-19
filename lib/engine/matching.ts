@@ -30,7 +30,7 @@ export const DEFAULT_MATCH_OPTIONS: Omit<MatchOptions, "now"> = {
   maxOrdersPerTrip: 4,
   maxDetourKm: 80,
   maxProposals: 5,
-  maxAnchors: 3,
+  maxAnchors: 2,
 };
 
 /** An order the vehicle is physically and legally able to carry. */
@@ -237,9 +237,21 @@ export function proposeTrips(
   const serviceable = allOrders.filter((o) => isServiceable(o, vehicle, options.now, dist));
   if (serviceable.length === 0) return [];
 
-  // Anchors: orders starting closest to where the truck already is.
+  /**
+   * Anchors: nearest pickup first, and among equally near ones the longest haul.
+   *
+   * The second key matters more than it looks. Most orders in this region start
+   * in the same few hubs, so sorting by distance from the truck alone leaves the
+   * order arbitrary — and truncating an arbitrary list drops good anchors. The
+   * long haul is the spine of a trip: it defines the corridor other orders can be
+   * attached to, so it earns the first anchor slot.
+   */
   const anchors = [...serviceable]
-    .sort((a, b) => dist.km(vehicle.at_id, a.origin_id) - dist.km(vehicle.at_id, b.origin_id))
+    .sort(
+      (a, b) =>
+        dist.km(vehicle.at_id, a.origin_id) - dist.km(vehicle.at_id, b.origin_id) ||
+        dist.km(b.origin_id, b.destination_id) - dist.km(a.origin_id, a.destination_id),
+    )
     .slice(0, options.maxAnchors);
 
   const plans: TripPlan[] = [];
@@ -251,8 +263,10 @@ export function proposeTrips(
       .map((o) => ({ order: o, cost: combinationCost(dist, anchor, o, vehicle.at_id) }))
       .filter((c) => Number.isFinite(c.cost) && c.cost <= options.maxDetourKm)
       .sort((a, b) => a.cost - b.cost)
-      // Cap the pool so subset enumeration stays bounded.
-      .slice(0, 8)
+      // Cap the pool so subset enumeration stays bounded. Six keeps the exact
+      // route search well under a second per vehicle; eight roughly doubled the
+      // planning time for a negligible gain in the plans actually chosen.
+      .slice(0, 6)
       .map((c) => c.order);
 
     const combinations: Order[][] = [[anchor]];

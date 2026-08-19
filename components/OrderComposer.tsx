@@ -88,9 +88,9 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
 
   return (
     <Surface className="overflow-hidden">
-      <div className="border-b border-ink-800 px-4 py-3.5 sm:px-5">
-        <h2 className="text-h3 text-ink-50">Новая заявка</h2>
-        <p className="mt-0.5 text-small text-ink-400">
+      <div className="border-b border-ink-200 px-4 py-3.5 sm:px-5">
+        <h2 className="text-h3 text-ink-900">Новая заявка</h2>
+        <p className="mt-0.5 text-small text-ink-500">
           Напишите своими словами — как в мессенджере. Поля заполнять не нужно.
         </p>
       </div>
@@ -105,7 +105,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
             }}
             rows={3}
             placeholder="надо 3 тонны арматуры из Актау в Жанаозен завтра до обеда"
-            className="w-full resize-y rounded-control border border-ink-700 bg-ink-950/60 p-3.5 text-body text-ink-100 placeholder:text-ink-600 transition focus:border-accent-dim focus:outline-none"
+            className="w-full resize-y rounded-control border border-ink-300 bg-white p-3.5 text-body text-ink-900 placeholder:text-ink-400 transition focus:border-brand-border focus:outline-none"
           />
         </div>
 
@@ -117,7 +117,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
           >
             {phase === "parsing" ? "Разбираю…" : "Разобрать"}
           </button>
-          <span className="text-small text-ink-600">примеры:</span>
+          <span className="text-small text-ink-400">примеры:</span>
           {EXAMPLES.map((example) => (
             <button
               key={example.short}
@@ -125,7 +125,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
                 setText(example.text);
                 setDraft(null);
               }}
-              className="rounded-pill border border-ink-750 px-2.5 py-1 text-[0.6875rem] text-ink-300 transition hover:border-ink-600 hover:text-ink-100"
+              className="rounded-pill border border-ink-200 px-2.5 py-1 text-[0.6875rem] text-ink-400 transition hover:border-ink-400 hover:text-ink-900"
             >
               {example.short}
             </button>
@@ -147,7 +147,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
         ) : null}
 
         {draft ? (
-          <div className="mt-4 animate-rise rounded-control border border-ink-750 bg-ink-950/50 p-4">
+          <div className="mt-4 animate-rise rounded-control border border-ink-200 bg-ink-50 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-caption uppercase text-ink-500">Мы поняли так</span>
               <Badge tone={draft.parsed_by === "ai" ? "accent" : "neutral"}>
@@ -195,15 +195,15 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
               </Field>
             </div>
 
-            <div className="mt-3.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-small text-ink-400">
+            <div className="mt-3.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-small text-ink-500">
               <span>Готов: {draft.ready_at ? when(draft.ready_at) : "—"}</span>
               <span>Срок: {draft.deadline_at ? when(draft.deadline_at) : "—"}</span>
-              <label className="flex cursor-pointer items-center gap-2 text-ink-300">
+              <label className="flex cursor-pointer items-center gap-2 text-ink-400">
                 <input
                   type="checkbox"
                   checked={draft.needs_cooling}
                   onChange={(event) => setDraft({ ...draft, needs_cooling: event.target.checked })}
-                  className="h-3.5 w-3.5 accent-[#19E5C4]"
+                  className="h-3.5 w-3.5 accent-[#2563EB]"
                 />
                 Нужен рефрижератор
               </label>
@@ -251,8 +251,8 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
 }
 
 const INPUT =
-  "w-full rounded-control border border-ink-700 bg-ink-950/60 px-3 py-2 text-body text-ink-100 " +
-  "placeholder:text-ink-600 transition focus:border-accent-dim focus:outline-none";
+  "w-full rounded-control border border-ink-300 bg-white px-3 py-2 text-body text-ink-900 " +
+  "placeholder:text-ink-400 transition focus:border-brand-border focus:outline-none";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

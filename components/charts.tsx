@@ -37,7 +37,7 @@ export function RankedBars({
   maxValue?: number;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const color = { accent: "#19E5C4", laden: "#11A896", empty: "#DD6B12" }[hue];
+  const color = { accent: "#2563EB", laden: "#0E8A6F", empty: "#C2560D" }[hue];
   const max = maxValue ?? Math.max(1, ...items.map((item) => item.value));
 
   if (items.length === 0) {
@@ -57,17 +57,17 @@ export function RankedBars({
             className="group"
           >
             <div className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0 truncate text-small text-ink-200">{item.label}</span>
+              <span className="min-w-0 truncate text-small text-ink-700">{item.label}</span>
               <span
                 className={`tnum shrink-0 text-small transition-colors ${
-                  active ? "text-ink-50" : "text-ink-400"
+                  active ? "text-ink-900" : "text-ink-500"
                 }`}
               >
                 {item.value.toLocaleString("ru-RU")}
-                {unit ? <span className="text-ink-600"> {unit}</span> : null}
+                {unit ? <span className="text-ink-400"> {unit}</span> : null}
               </span>
             </div>
-            <div className="mt-1 h-1.5 overflow-hidden rounded-pill bg-ink-800">
+            <div className="mt-1 h-1.5 overflow-hidden rounded-pill bg-ink-100">
               <div
                 className="h-full rounded-pill transition-all duration-500 ease-swift"
                 style={{
@@ -78,7 +78,7 @@ export function RankedBars({
               />
             </div>
             {item.note ? (
-              <div className="mt-0.5 text-[0.6875rem] text-ink-600">{item.note}</div>
+              <div className="mt-0.5 text-[0.6875rem] text-ink-400">{item.note}</div>
             ) : null}
           </li>
         );
@@ -118,10 +118,10 @@ export function BeforeAfterBars({
         return (
           <div key={row.label}>
             <div className="flex items-baseline justify-between gap-3">
-              <span className="text-small text-ink-200">{row.label}</span>
-              <span className="tnum text-small text-ink-100">
+              <span className="text-small text-ink-700">{row.label}</span>
+              <span className="tnum text-small text-ink-900">
                 {Math.round(total).toLocaleString("ru-RU")}{" "}
-                <span className="text-ink-600">{unit}</span>
+                <span className="text-ink-400">{unit}</span>
               </span>
             </div>
             <div
@@ -130,12 +130,12 @@ export function BeforeAfterBars({
             >
               <div
                 className="h-full rounded-l-pill transition-all duration-700 ease-swift"
-                style={{ width: `${(row.laden / total) * 100}%`, backgroundColor: "#11A896" }}
+                style={{ width: `${(row.laden / total) * 100}%`, backgroundColor: "#0E8A6F" }}
                 title={`С грузом: ${Math.round(row.laden).toLocaleString("ru-RU")} ${unit}`}
               />
               <div
                 className="h-full rounded-r-pill transition-all duration-700 ease-swift"
-                style={{ width: `${(row.empty / total) * 100}%`, backgroundColor: "#DD6B12" }}
+                style={{ width: `${(row.empty / total) * 100}%`, backgroundColor: "#C2560D" }}
                 title={`Порожний: ${Math.round(row.empty).toLocaleString("ru-RU")} ${unit}`}
               />
             </div>
@@ -149,13 +149,13 @@ export function BeforeAfterBars({
         );
       })}
 
-      <div className="flex items-center gap-4 border-t border-ink-800 pt-3 text-[0.6875rem]">
+      <div className="flex items-center gap-4 border-t border-ink-200 pt-3 text-[0.6875rem]">
         <span className="flex items-center gap-1.5 text-laden-ink">
-          <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: "#11A896" }} />
+          <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: "#0E8A6F" }} />
           с грузом
         </span>
         <span className="flex items-center gap-1.5 text-empty-ink">
-          <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: "#DD6B12" }} />
+          <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: "#C2560D" }} />
           порожний
         </span>
       </div>
@@ -182,8 +182,8 @@ export function UnitTrack({
     <div>
       <div className="flex items-baseline justify-between">
         <span className="text-caption uppercase text-ink-500">{label}</span>
-        <span className="tnum text-small text-ink-300">
-          <span className="text-ink-50">{served}</span> из {total}
+        <span className="tnum text-small text-ink-400">
+          <span className="text-ink-900">{served}</span> из {total}
         </span>
       </div>
       <div className="mt-2 flex flex-wrap gap-[3px]">
@@ -191,7 +191,7 @@ export function UnitTrack({
           <span
             key={index}
             className="h-3 w-[6px] rounded-sm transition-colors"
-            style={{ backgroundColor: filled ? "#11A896" : "#1D2430" }}
+            style={{ backgroundColor: filled ? "#0E8A6F" : "#1D2430" }}
           />
         ))}
       </div>

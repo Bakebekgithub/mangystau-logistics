@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 import { getDb } from "@/lib/db";
 import { invalidateContext } from "@/lib/dispatch";
-import { regenerateProposals } from "@/lib/planning";
 import { DEFAULT_SEED_CONFIG, generateSeed } from "@/lib/seed";
 import type { Settlement } from "@/lib/types";
 
@@ -63,10 +62,10 @@ export async function POST() {
   }
 
   invalidateContext();
-  const summary = await regenerateProposals();
 
+  // Deliberately does not plan. The demo runner calls /api/plan as its own step,
+  // and planning twice doubled the wait before anything appeared on screen.
   return NextResponse.json({
     reset: { carriers: carriers.length, vehicles: vehicles.length, orders: orders.length },
-    planning: summary,
   });
 }

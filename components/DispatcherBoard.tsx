@@ -133,7 +133,7 @@ export function DispatcherBoard({
       <div className="relative order-2 h-[55vh] w-full lg:order-1 lg:h-auto lg:flex-1">
         <MapPanel settlements={settlements} arcs={arcs} pins={pins} labels />
 
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1 rounded-control border border-ink-750 bg-ink-950/85 p-1 backdrop-blur">
+        <div className="absolute left-3 top-3 flex flex-wrap gap-1 rounded-control border border-ink-200 bg-white/95 p-1 backdrop-blur">
           {LAYERS.map((option) => (
             <button
               key={option.key}
@@ -141,8 +141,8 @@ export function DispatcherBoard({
               title={option.hint}
               className={`rounded-[7px] px-2.5 py-1.5 text-small font-medium transition ${
                 layer === option.key
-                  ? "bg-ink-750 text-ink-50"
-                  : "text-ink-400 hover:text-ink-200"
+                  ? "bg-ink-200 text-ink-900"
+                  : "text-ink-500 hover:text-ink-700"
               }`}
             >
               {option.label}
@@ -150,16 +150,16 @@ export function DispatcherBoard({
           ))}
         </div>
 
-        <div className="pointer-events-none absolute bottom-3 left-3 max-w-xs rounded-control border border-ink-750 bg-ink-950/85 px-3 py-2.5 backdrop-blur">
-          <p className="text-[0.6875rem] text-ink-400">
+        <div className="pointer-events-none absolute bottom-3 left-3 max-w-xs rounded-control border border-ink-200 bg-white/95 px-3 py-2.5 backdrop-blur">
+          <p className="text-[0.6875rem] text-ink-500">
             {LAYERS.find((option) => option.key === layer)?.hint}
           </p>
           <div className="mt-1.5 flex items-center gap-3 text-[0.6875rem]">
             <span className="flex items-center gap-1.5 text-laden-ink">
-              <span className="h-0.5 w-4 rounded" style={{ background: "#11A896" }} /> с грузом
+              <span className="h-0.5 w-4 rounded" style={{ background: "#0E8A6F" }} /> с грузом
             </span>
             <span className="flex items-center gap-1.5 text-empty-ink">
-              <span className="h-0 w-4 border-t-2 border-dashed" style={{ borderColor: "#DD6B12" }} />
+              <span className="h-0 w-4 border-t-2 border-dashed" style={{ borderColor: "#C2560D" }} />
               порожний
             </span>
           </div>
@@ -167,10 +167,15 @@ export function DispatcherBoard({
       </div>
 
       {/* Analytics */}
-      <div className="order-1 w-full space-y-3 overflow-y-auto border-ink-800 p-4 lg:order-2 lg:w-[25rem] lg:shrink-0 lg:border-l xl:w-[27rem]">
+      <div className="order-1 w-full space-y-3 overflow-y-auto border-ink-200 p-4 lg:order-2 lg:w-[25rem] lg:shrink-0 lg:border-l xl:w-[27rem]">
         <div>
-          <h1 className="text-h2 text-ink-50">Грузопоток области</h1>
-          <p className="mt-1 text-small text-ink-400">
+          <h1 className="text-h2 text-ink-900">Грузопоток области</h1>
+          <p className="mt-1.5 text-small text-ink-600">
+            Для отдела транспорта и снабжения: куда и сколько возят внутри области, где машины
+            ходят пустыми и каким сёлам не хватает подвоза. Это данные для планирования дорог,
+            субсидий и закупок — сейчас их просто нет ни у кого.
+          </p>
+          <p className="mt-2 text-small text-ink-500">
             {stats.trips} рейсов · {stats.orders_covered} из {stats.orders_total} заявок
           </p>
         </div>
@@ -188,14 +193,14 @@ export function DispatcherBoard({
           <div className="mt-3.5">
             <LadenBar ladenKm={ladenKm} emptyKm={stats.planned_empty_km} />
           </div>
-          <p className="mt-3 text-small text-ink-400">
+          <p className="mt-3 text-small text-ink-500">
             Чистая арифметика по собранным рейсам: машина, которая везёт груз в одну сторону
             и возвращается порожней, не может превысить половину.
           </p>
         </Surface>
 
         <Surface className="p-4">
-          <h2 className="text-h3 text-ink-50">Пробег: сегодня и по плану</h2>
+          <h2 className="text-h3 text-ink-900">Пробег: сегодня и по плану</h2>
           <p className="mt-1 text-small text-ink-500">
             Сравнение с текущим состоянием региона, где порожний пробег около 40% — цифра
             из кейса, не наша.
@@ -238,14 +243,14 @@ export function DispatcherBoard({
             total={stats.orders_total}
             label="Заявки области"
           />
-          <p className="mt-3 text-small text-ink-400">
+          <p className="mt-3 text-small text-ink-500">
             Из них {stats.small_remote_served} — мелкие грузы до тонны дальше 100 км в село:
             именно те, что на бирже остались бы без отклика.
           </p>
         </Surface>
 
         <Surface className="p-4">
-          <h2 className="text-h3 text-ink-50">Загруженные направления</h2>
+          <h2 className="text-h3 text-ink-900">Загруженные направления</h2>
           <p className="mt-1 text-small text-ink-500">Сколько отправок по коридору</p>
           <div className="mt-3.5">
             <RankedBars items={corridors} unit="отпр." hue="accent" />
@@ -253,7 +258,7 @@ export function DispatcherBoard({
         </Surface>
 
         <Surface className="p-4">
-          <h2 className="text-h3 text-ink-50">Где остаётся порожний пробег</h2>
+          <h2 className="text-h3 text-ink-900">Где остаётся порожний пробег</h2>
           <p className="mt-1 text-small text-ink-500">
             Рейсы, которым движок не нашёл обратной загрузки — здесь не хватает встречных грузов
           </p>

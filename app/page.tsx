@@ -1,190 +1,337 @@
 import Link from "next/link";
 
-import { MapPanel } from "@/components/MapPanel";
-import { Badge, LadenBar, LinkButton, Logo, Metric, Surface } from "@/components/ui";
-import { ASSUMPTIONS } from "@/lib/engine/economics";
-import { km, kzt, litres, percent } from "@/lib/format";
-import { analytics, listFlows, listSettlements } from "@/lib/queries";
+import { Badge, LinkButton, Logo, Surface } from "@/components/ui";
+import { indicativePriceKzt } from "@/lib/engine/economics";
+import { km, kzt, litres, percent, weight } from "@/lib/format";
+import { analytics, listTrips } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [stats, flows, settlements] = await Promise.all([
-    analytics(),
-    listFlows(),
-    listSettlements(),
-  ]);
+  const [stats, proposed] = await Promise.all([analytics(), listTrips("proposed")]);
 
-  const busiest = Math.max(1, ...flows.map((flow) => flow.shipments));
-  const arcs = flows.slice(0, 26).map((flow) => ({
-    id: `${flow.from_id}-${flow.to_id}`,
-    from: [flow.from_lat, flow.from_lon] as [number, number],
-    to: [flow.to_lat, flow.to_lon] as [number, number],
-    laden: true,
-    weight: flow.shipments / busiest,
-    label: `${flow.from_name} — ${flow.to_name}: ${flow.shipments} отправк${flow.shipments === 1 ? "а" : "и"}, ${flow.tonnes} т`,
-  }));
+  // A real trip from the database, used as the hero example. Nothing here is a
+  // mock-up: if the engine found nothing, the card simply does not appear.
+  const example =
+    [...proposed].sort((a, b) => b.stops.length - a.stops.length)[0] ?? null;
 
   return (
-    <main>
-      {/* Hero: the map is the product, so it leads. */}
-      <section className="relative min-h-[82vh] overflow-hidden border-b border-ink-800">
-        <div className="absolute inset-0 opacity-90">
-          <MapPanel settlements={settlements} arcs={arcs} labels />
+    <main className="min-h-screen">
+      <header className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
+        <div className="flex items-center gap-2.5">
+          <Logo className="h-7 w-7" />
+          <span className="text-[0.9375rem] font-semibold tracking-tight text-ink-900">
+            Mangystau<span className="text-brand">.</span>
+          </span>
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink-950 via-ink-950/85 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-ink-950 to-transparent" />
+        <div className="flex items-center gap-1.5">
+          <Link
+            href="/demo"
+            className="rounded-control px-3 py-1.5 text-small font-medium text-brand transition hover:bg-brand-soft"
+          >
+            Показать за минуту
+          </Link>
+          <Link
+            href="/methodology"
+            className="rounded-control px-3 py-1.5 text-small text-ink-500 transition hover:bg-ink-100 hover:text-ink-700"
+          >
+            Как это считается
+          </Link>
+        </div>
+      </header>
 
-        <div className="relative mx-auto flex min-h-[82vh] max-w-7xl flex-col justify-center px-4 py-14">
-          <div className="max-w-xl">
-            <div className="flex items-center gap-2.5">
-              <Logo className="h-7 w-7" />
-              <span className="text-caption uppercase text-ink-400">
-                Мангистауская область
-              </span>
-            </div>
+      {/* Hero: copy on the left, a real trip from the system on the right. */}
+      <section className="mx-auto grid max-w-6xl items-center gap-10 px-5 pb-16 pt-8 lg:grid-cols-2 lg:gap-14 lg:pt-16">
+        <div>
+          <Badge tone="accent">Мангистауская область</Badge>
 
-            <h1 className="mt-5 text-display text-ink-50">
-              Груз есть.
-              <br />
-              Машина есть.
-              <br />
-              <span className="text-accent">Рейс собран.</span>
-            </h1>
+          <h1 className="mt-5 text-display text-ink-900">
+            Отвезти груз по области —
+            <br />
+            <span className="text-brand">без звонков и поисков</span>
+          </h1>
 
-            <p className="mt-5 max-w-lg text-body text-ink-300">
-              Биржа сводит одну заявку с одной машиной. Заявка на 400 кг в село за 250 км там
-              не получает отклика — отдельный рейс за такой груз убыточен. Мы собираем несколько
-              заявок в один рейс: обратную загрузку вместо порожнего пробега и мелкие грузы
-              в отдалённые посёлки одним заходом.
-            </p>
+          <p className="mt-5 max-w-md text-[1.0625rem] leading-relaxed text-ink-400">
+            Напишите, что и куда везти. Мы найдём машину, которая уже едет в ту сторону,
+            и добавим ваш груз к её рейсу. Дешевле, чем гнать машину отдельно.
+          </p>
 
-            <div className="mt-7 flex flex-wrap gap-2.5">
-              <LinkButton href="/shipper">Отправить груз</LinkButton>
-              <LinkButton href="/driver" variant="secondary">
-                Найти рейс
-              </LinkButton>
-            </div>
-
-            <p className="mt-3.5 text-small text-ink-500">
-              Без регистрации. Данные настоящие и сохраняются в базу.
-            </p>
+          <div className="mt-8 flex flex-col gap-2.5 sm:flex-row">
+            <LinkButton href="/shipper">Отправить груз</LinkButton>
+            <LinkButton href="/driver" variant="secondary">
+              Я перевозчик
+            </LinkButton>
           </div>
 
-          {/* The headline claim, on the hero, as one bar. */}
-          <Surface className="mt-10 max-w-xl p-4 sm:p-5">
-            <div className="flex items-baseline justify-between gap-4">
+          <p className="mt-4 text-small text-ink-500">Без регистрации — просто выберите роль</p>
+        </div>
+
+        {example ? <HeroExample trip={example} /> : null}
+      </section>
+
+      {/* How it works — three steps, plain words. */}
+      <section className="border-y border-ink-200 bg-ink-50 py-14">
+        <div className="mx-auto max-w-6xl px-5">
+          <h2 className="text-h1 text-ink-900">Как это работает</h2>
+          <div className="mt-8 grid gap-8 sm:grid-cols-3">
+            <Step
+              n="1"
+              title="Пишете как в мессенджере"
+              text="«3 тонны арматуры из Актау в Жанаозен завтра до обеда». Никаких полей и форм."
+            />
+            <Step
+              n="2"
+              title="Мы собираем рейс"
+              text="Ищем машину, которая уже идёт в ту сторону, и подбираем ей попутные грузы."
+            />
+            <Step
+              n="3"
+              title="Водитель берёт и едет"
+              text="Вы видите, кто везёт и где груз. Он видит маршрут и заработок."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* The differentiator, shown rather than argued. */}
+      <section className="mx-auto max-w-6xl px-5 py-14">
+        <h2 className="text-h1 text-ink-900">Почему дешевле</h2>
+        <p className="mt-3 max-w-2xl text-body text-ink-400">
+          Отдельная машина за 400 кг в село — это невыгодно, поэтому такие заявки обычно
+          вообще никто не берёт. Мы складываем несколько мелких грузов в один рейс.
+        </p>
+
+        <div className="mt-8 grid items-center gap-6 lg:grid-cols-[1fr_auto_1fr]">
+          <Surface className="p-5">
+            <div className="text-caption uppercase text-empty-ink">Отдельными рейсами</div>
+            <ul className="mt-3 space-y-2.5">
+              {[
+                ["400 кг", "в Сенек"],
+                ["700 кг", "в Курык"],
+                ["300 кг", "в Жетыбай"],
+              ].map(([mass, place]) => (
+                <li key={place} className="flex items-center gap-3 text-small">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-control bg-ink-100 text-[0.625rem] text-ink-500">
+                    🚛
+                  </span>
+                  <span className="tnum text-ink-700">{mass}</span>
+                  <span className="text-ink-500">{place}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3.5 text-small text-empty-ink">
+              Три машины. Или, что бывает чаще, ни одной — никто не поедет.
+            </p>
+          </Surface>
+
+          <div className="flex justify-center text-2xl text-brand lg:rotate-0">→</div>
+
+          <Surface accent className="p-5">
+            <div className="text-caption uppercase text-laden-ink">Один рейс</div>
+            <div className="mt-3 flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-control bg-brand-soft text-base">
+                🚛
+              </span>
               <div>
-                <div className="text-caption uppercase text-ink-500">
-                  Оплачиваемых километров в текущем плане
-                </div>
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="tnum text-metric-lg text-laden-ink">
-                    {percent(stats.paid_km_share)}
-                  </span>
-                  <span className="text-small text-ink-400">
-                    против потолка {percent(stats.paid_km_ceiling_without_pairing)}
-                  </span>
-                </div>
+                <div className="tnum text-body font-semibold text-ink-900">1400 кг</div>
+                <div className="text-small text-ink-500">Сенек · Курык · Жетыбай</div>
               </div>
-              <Badge tone="laden">{stats.trips} рейсов</Badge>
             </div>
-            <div className="mt-3.5">
-              <LadenBar ladenKm={stats.planned_km - stats.planned_empty_km} emptyKm={stats.planned_empty_km} />
-            </div>
-            <p className="mt-3 text-small text-ink-400">
-              Машина, которая везёт груз туда и возвращается порожняком, не может превысить 50%.
-              Всё, что выше — это собранные рейсы.
+            <p className="mt-3.5 text-small text-laden-ink">
+              Одна машина вместо трёх. Все три магазина получили товар.
             </p>
           </Surface>
         </div>
       </section>
 
-      {/* What the plan already saves */}
-      <section className="mx-auto max-w-7xl px-4 py-12">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Surface className="p-5">
-            <Metric
-              label="Не поехали"
-              value={km(stats.km_avoided).replace(" км", "")}
-              unit="км"
-              sub={`против ${km(stats.today_km)} при порожнем пробеге ${percent(ASSUMPTIONS.regionalEmptyShareToday)}`}
-            />
-          </Surface>
-          <Surface className="p-5">
-            <Metric
-              label="Топливо"
-              value={litres(stats.fuel_saved_l).replace(" л", "")}
-              unit="л"
-              sub={kzt(stats.money_saved_kzt)}
+      {/* Numbers, each with a plain reason for being here. */}
+      <section className="border-t border-ink-200 bg-ink-50 py-14">
+        <div className="mx-auto max-w-6xl px-5">
+          <h2 className="text-h1 text-ink-900">Что это даёт</h2>
+          <p className="mt-3 max-w-2xl text-body text-ink-400">
+            Цифры ниже посчитаны на текущем плане перевозок в системе — по настоящим дорожным
+            расстояниям Мангистау.
+          </p>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Outcome
+              who="Перевозчику"
+              value={percent(stats.paid_km_share)}
+              caption="километров с грузом"
+              why={`Машина, которая едет туда с грузом и обратно порожняком, зарабатывает максимум на ${percent(stats.paid_km_ceiling_without_pairing)} пути. Собранный рейс — на ${percent(stats.paid_km_share)}.`}
               tone="laden"
             />
-          </Surface>
-          <Surface className="p-5">
-            <Metric
-              label="Заявок обслужено"
-              value={stats.orders_covered}
-              unit={`из ${stats.orders_total}`}
-            />
-          </Surface>
-          <Surface className="p-5">
-            <Metric
-              label="Мелких грузов в сёла"
-              value={stats.small_remote_served}
-              sub="до тонны, дальше 100 км"
+            <Outcome
+              who="Отправителю"
+              value={String(stats.small_remote_served)}
+              caption="мелких грузов доставлено в села"
+              why="Грузы до тонны дальше 100 км — те самые, которые обычно висят без ответа, потому что отдельный рейс за них невыгоден."
               tone="accent"
             />
-          </Surface>
-        </div>
+            <Outcome
+              who="Области"
+              value={km(stats.km_avoided)}
+              caption="машины не проехали"
+              why={`Тот же груз перевезён меньшим пробегом: ${litres(stats.fuel_saved_l)} топлива и ${kzt(stats.money_saved_kzt)} экономии, плюс меньше износа дорог.`}
+              tone="neutral"
+            />
+          </div>
 
-        <div className="mt-8 grid gap-3 lg:grid-cols-2">
-          <Surface className="p-5">
-            <h3 className="text-h3 text-ink-50">Настоящее</h3>
-            <ul className="mt-3 space-y-2 text-small text-ink-300">
-              <Fact>65 населённых пунктов области из OpenStreetMap, с казахскими и русскими названиями</Fact>
-              <Fact>2080 расстояний по дорожной сети через OSRM — ни одного по прямой</Fact>
-              <Fact>Постоянная база Postgres, свой серверный бэкенд</Fact>
-              <Fact>Алгоритм сборки рейсов и расчёт экономики</Fact>
-            </ul>
-            <p className="mt-3.5 text-small text-ink-500">
-              Побочная находка: дороги Мангистау в среднем на 53% длиннее прямой линии —
-              измерено по 4158 маршрутам.
-            </p>
-          </Surface>
-
-          <Surface className="p-5">
-            <h3 className="text-h3 text-ink-50">Смоделированное</h3>
-            <ul className="mt-3 space-y-2 text-small text-ink-300">
-              <Fact tone="muted">Кто именно что везёт — реальных отправителей у проекта нет</Fact>
-              <Fact tone="muted">Парк машин и их текущее положение</Fact>
-              <Fact tone="muted">Движение по маршруту — симуляция, не GPS-трекеры</Fact>
-            </ul>
-            <p className="mt-3.5 text-small text-ink-500">
-              Спрос сгенерирован от населения и типа пункта, а не случайно: города отправляют,
-              отдалённые села получают, часть сёл отправляет обратно.
-            </p>
-            <Link
-              href="/methodology"
-              className="mt-3.5 inline-block text-small font-medium text-accent underline decoration-accent-dim underline-offset-4 hover:text-accent-hover"
-            >
-              Как считается каждая цифра
-            </Link>
-          </Surface>
+          <Link
+            href="/methodology"
+            className="mt-6 inline-block text-small font-medium text-brand underline decoration-brand-border underline-offset-4 hover:text-brand-hover"
+          >
+            Откуда эти цифры и что здесь смоделировано
+          </Link>
         </div>
       </section>
+
+      {/* Roles — who opens which screen. */}
+      <section className="mx-auto max-w-6xl px-5 py-14">
+        <h2 className="text-h1 text-ink-900">Кому это нужно</h2>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <RoleCard
+            href="/shipper"
+            title="Отправитель"
+            who="Магазин, стройка, фермерское хозяйство"
+            does="Написать заявку и видеть, где груз"
+          />
+          <RoleCard
+            href="/driver"
+            title="Перевозчик"
+            who="Водитель, владелец машины"
+            does="Взять рейс и не ехать порожняком"
+          />
+          <RoleCard
+            href="/akimat"
+            title="Акимат"
+            who="Отдел транспорта и снабжения"
+            does="Видеть, куда и сколько возят в области"
+          />
+        </div>
+      </section>
+
+      <footer className="border-t border-ink-200 py-8">
+        <div className="mx-auto max-w-6xl px-5 text-small text-ink-500">
+          Данные о населённых пунктах и дорогах — OpenStreetMap и OSRM. Хакатон Mangystau, 2026.
+        </div>
+      </footer>
     </main>
   );
 }
 
-function Fact({ children, tone = "accent" }: { children: React.ReactNode; tone?: "accent" | "muted" }) {
+/** A real proposed trip, presented as the product's own artefact. */
+function HeroExample({ trip }: { trip: Awaited<ReturnType<typeof listTrips>>[number] }) {
+  const orders = new Set(trip.stops.map((stop) => stop.order_id).filter(Boolean)).size;
+  const cargo = trip.stops
+    .filter((stop) => stop.action === "pickup" && stop.cargo)
+    .slice(0, 3)
+    .map((stop) => `${stop.cargo}${stop.weight_kg ? ` ${weight(stop.weight_kg)}` : ""}`);
+
   return (
-    <li className="flex gap-2.5">
-      <span
-        className={`mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full ${
-          tone === "accent" ? "bg-accent" : "bg-ink-600"
-        }`}
-      />
-      <span>{children}</span>
-    </li>
+    <div className="relative">
+      <div className="absolute -inset-6 rounded-[28px] bg-brand/[0.06] blur-2xl" aria-hidden />
+      <Surface accent className="relative overflow-hidden">
+        <div className="flex items-center justify-between border-b border-ink-200 px-4 py-3">
+          <span className="text-caption uppercase text-ink-500">Сейчас в системе</span>
+          <Badge tone="laden">рейс собран</Badge>
+        </div>
+
+        <div className="p-4 sm:p-5">
+          <div className="text-h3 text-ink-900">
+            {trip.at_name} → {trip.stops[Math.floor(trip.stops.length / 2)]?.settlement_name} →{" "}
+            {trip.at_name}
+          </div>
+          <div className="mt-1 text-small text-ink-500">
+            {trip.plate} · {trip.capacity_kg / 1000} т · {orders} груза в одном рейсе
+          </div>
+
+          <ul className="mt-4 space-y-1.5">
+            {cargo.map((line, index) => (
+              <li key={index} className="flex items-center gap-2.5 text-small text-ink-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+                {line}
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-5 grid grid-cols-3 gap-3 border-t border-ink-200 pt-4">
+            <div>
+              <div className="text-caption uppercase text-ink-500">Водитель получит</div>
+              <div className="tnum mt-1 text-metric text-brand">
+                {kzt(indicativePriceKzt(trip.fuel_l))}
+              </div>
+            </div>
+            <div>
+              <div className="text-caption uppercase text-ink-500">Порожний</div>
+              <div className="tnum mt-1 text-metric text-laden-ink">{km(trip.empty_km)}</div>
+            </div>
+            <div>
+              <div className="text-caption uppercase text-ink-500">Всего</div>
+              <div className="tnum mt-1 text-metric text-ink-900">{km(trip.total_km)}</div>
+            </div>
+          </div>
+        </div>
+      </Surface>
+    </div>
+  );
+}
+
+function Step({ n, title, text }: { n: string; title: string; text: string }) {
+  return (
+    <div>
+      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-brand-border/60 bg-brand-soft text-body font-semibold text-brand">
+        {n}
+      </div>
+      <h3 className="mt-3.5 text-h3 text-ink-900">{title}</h3>
+      <p className="mt-1.5 text-small text-ink-400">{text}</p>
+    </div>
+  );
+}
+
+function Outcome({
+  who,
+  value,
+  caption,
+  why,
+  tone,
+}: {
+  who: string;
+  value: string;
+  caption: string;
+  why: string;
+  tone: "laden" | "accent" | "neutral";
+}) {
+  const color = { laden: "text-laden-ink", accent: "text-brand", neutral: "text-ink-900" }[tone];
+  return (
+    <Surface className="p-5">
+      <div className="text-caption uppercase text-ink-500">{who}</div>
+      <div className={`tnum mt-2 text-metric-lg ${color}`}>{value}</div>
+      <div className="text-small text-ink-700">{caption}</div>
+      <p className="mt-3 text-small text-ink-500">{why}</p>
+    </Surface>
+  );
+}
+
+function RoleCard({
+  href,
+  title,
+  who,
+  does,
+}: {
+  href: string;
+  title: string;
+  who: string;
+  does: string;
+}) {
+  return (
+    <Link href={href} className="block">
+      <Surface interactive className="h-full p-5">
+        <div className="text-h3 text-ink-900">{title}</div>
+        <div className="mt-1 text-caption uppercase text-ink-500">{who}</div>
+        <p className="mt-3 text-small text-ink-400">{does}</p>
+        <span className="mt-4 inline-block text-small font-medium text-brand">Открыть →</span>
+      </Surface>
+    </Link>
   );
 }

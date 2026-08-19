@@ -19,10 +19,10 @@ export function Surface({
   return (
     <div
       className={[
-        "rounded-card border bg-ink-900/90 shadow-card backdrop-blur-sm",
-        accent ? "border-accent-dim/60" : "border-ink-750",
+        "rounded-card border bg-white shadow-card",
+        accent ? "border-brand-border ring-1 ring-brand-soft" : "border-ink-200",
         interactive
-          ? "transition duration-200 ease-swift hover:border-ink-600 hover:shadow-lift"
+          ? "transition duration-200 ease-swift hover:border-ink-300 hover:shadow-lift"
           : "",
         className,
       ].join(" ")}
@@ -44,8 +44,8 @@ export function SectionHead({
   return (
     <div className="mb-4 flex items-end justify-between gap-4">
       <div>
-        <h2 className="text-h2 text-ink-50">{title}</h2>
-        {hint ? <p className="mt-1 max-w-2xl text-small text-ink-400">{hint}</p> : null}
+        <h2 className="text-h2 text-ink-900">{title}</h2>
+        {hint ? <p className="mt-1 max-w-2xl text-small text-ink-500">{hint}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
@@ -68,9 +68,9 @@ const BUTTON_BASE =
   "disabled:cursor-not-allowed disabled:opacity-40 active:translate-y-px select-none";
 
 const BUTTON_VARIANT: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-ink-950 hover:bg-accent-hover active:bg-accent-press shadow-glow",
-  secondary: "bg-ink-800 text-ink-100 border border-ink-700 hover:bg-ink-750 hover:border-ink-600",
-  ghost: "text-ink-300 hover:bg-ink-800 hover:text-ink-100",
+  primary: "bg-brand text-white hover:bg-brand-hover active:bg-brand-press shadow-control",
+  secondary: "bg-ink-100 text-ink-900 border border-ink-300 hover:bg-ink-200 hover:border-ink-400",
+  ghost: "text-ink-600 hover:bg-ink-100 hover:text-ink-900",
   danger: "bg-danger/15 text-danger border border-danger/30 hover:bg-danger/25",
 };
 
@@ -109,12 +109,12 @@ export function LinkButton({
 type BadgeTone = "neutral" | "accent" | "laden" | "empty" | "warn" | "danger";
 
 const BADGE_TONE: Record<BadgeTone, string> = {
-  neutral: "bg-ink-800 text-ink-300 border-ink-700",
-  accent: "bg-accent-faint text-accent border-accent-dim/60",
-  laden: "bg-laden-faint text-laden-ink border-laden-dim/60",
-  empty: "bg-empty-faint text-empty-ink border-empty-ink-dim/60",
-  warn: "bg-warn-faint text-warn border-warn/30",
-  danger: "bg-danger-faint text-danger border-danger/30",
+  neutral: "bg-ink-100 text-ink-600 border-ink-200",
+  accent: "bg-brand-soft text-brand border-brand-border",
+  laden: "bg-laden-soft text-laden-ink border-laden-border",
+  empty: "bg-empty-soft text-empty-ink border-empty-border",
+  warn: "bg-warn-soft text-warn-ink border-warn-border",
+  danger: "bg-danger-soft text-danger-ink border-danger-border",
 };
 
 export function Badge({
@@ -156,10 +156,10 @@ export function Metric({
   size?: "md" | "lg";
 }) {
   const toneClass = {
-    neutral: "text-ink-50",
+    neutral: "text-ink-900",
     laden: "text-laden-ink",
     empty: "text-empty-ink",
-    accent: "text-accent",
+    accent: "text-brand",
   }[tone];
 
   return (
@@ -169,9 +169,9 @@ export function Metric({
         <span className={`tnum ${size === "lg" ? "text-metric-lg" : "text-metric"} ${toneClass}`}>
           {value}
         </span>
-        {unit ? <span className="text-small text-ink-400">{unit}</span> : null}
+        {unit ? <span className="text-small text-ink-500">{unit}</span> : null}
       </div>
-      {sub ? <div className="mt-1 text-small text-ink-400">{sub}</div> : null}
+      {sub ? <div className="mt-1 text-small text-ink-500">{sub}</div> : null}
     </div>
   );
 }
@@ -196,7 +196,7 @@ export function LadenBar({
 
   return (
     <div>
-      <div className="relative h-2 overflow-hidden rounded-pill bg-ink-800">
+      <div className="relative h-2 overflow-hidden rounded-pill bg-ink-200">
         <div
           className="absolute inset-y-0 left-0 rounded-pill bg-laden transition-all duration-700 ease-swift"
           style={{ width: `${paid}%` }}
@@ -240,17 +240,17 @@ const ROLE_TABS: { key: Role; href: string; label: string }[] = [
 
 export function TopBar({ current }: { current?: Role }) {
   return (
-    <header className="sticky top-0 z-[900] border-b border-ink-800 bg-ink-950/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-[900] border-b border-ink-200 bg-white/95 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <Logo />
-          <span className="hidden text-[0.9375rem] font-semibold tracking-tight text-ink-50 sm:block">
-            Mangystau<span className="text-accent">.</span>
+          <span className="hidden text-[0.9375rem] font-semibold tracking-tight text-ink-900 sm:block">
+            Mangystau<span className="text-brand">.</span>
           </span>
         </Link>
 
         <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
-          <div className="flex rounded-control bg-ink-850 p-0.5">
+          <div className="flex rounded-control bg-ink-100 p-0.5">
             {ROLE_TABS.map((tab) => (
               <Link
                 key={tab.key}
@@ -258,8 +258,8 @@ export function TopBar({ current }: { current?: Role }) {
                 className={[
                   "whitespace-nowrap rounded-[7px] px-3 py-1.5 text-small font-medium transition duration-150 ease-swift",
                   current === tab.key
-                    ? "bg-ink-750 text-ink-50 shadow-card"
-                    : "text-ink-400 hover:text-ink-200",
+                    ? "bg-ink-200 text-ink-900 shadow-card"
+                    : "text-ink-500 hover:text-ink-700",
                 ].join(" ")}
               >
                 {tab.label}
@@ -268,12 +268,20 @@ export function TopBar({ current }: { current?: Role }) {
           </div>
         </nav>
 
-        <Link
-          href="/methodology"
-          className="shrink-0 rounded-control px-2.5 py-1.5 text-small text-ink-400 transition hover:bg-ink-800 hover:text-ink-200"
-        >
-          Методология
-        </Link>
+        <div className="flex shrink-0 items-center gap-1">
+          <Link
+            href="/demo"
+            className="rounded-control px-2.5 py-1.5 text-small font-medium text-brand transition hover:bg-brand-soft"
+          >
+            Демо
+          </Link>
+          <Link
+            href="/methodology"
+            className="rounded-control px-2.5 py-1.5 text-small text-ink-500 transition hover:bg-ink-100 hover:text-ink-700"
+          >
+            Методология
+          </Link>
+        </div>
       </div>
     </header>
   );
@@ -283,15 +291,15 @@ export function TopBar({ current }: { current?: Role }) {
 export function Logo({ className = "h-6 w-6" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden fill="none">
-      <rect width="24" height="24" rx="7" fill="#11151D" />
+      <rect width="24" height="24" rx="7" fill="#EFF5FF" />
       <path
         d="M5 7.5h6.5c2.2 0 3.5 1.4 3.5 3.2S13.7 14 11.5 14H7"
-        stroke="#19E5C4"
+        stroke="#2563EB"
         strokeWidth="1.9"
         strokeLinecap="round"
       />
-      <path d="M5 16.5h14" stroke="#11A896" strokeWidth="1.9" strokeLinecap="round" />
-      <circle cx="19" cy="10.8" r="1.6" fill="#19E5C4" />
+      <path d="M5 16.5h14" stroke="#0E8A6F" strokeWidth="1.9" strokeLinecap="round" />
+      <circle cx="19" cy="10.8" r="1.6" fill="#2563EB" />
     </svg>
   );
 }
@@ -310,9 +318,9 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-card border border-dashed border-ink-750 bg-ink-900/40 px-6 py-10 text-center">
-      <p className="text-h3 text-ink-200">{title}</p>
-      {children ? <p className="mx-auto mt-2 max-w-md text-small text-ink-400">{children}</p> : null}
+    <div className="rounded-card border border-dashed border-ink-200 bg-ink-50 px-6 py-10 text-center">
+      <p className="text-h3 text-ink-700">{title}</p>
+      {children ? <p className="mx-auto mt-2 max-w-md text-small text-ink-500">{children}</p> : null}
       {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
     </div>
   );
@@ -334,9 +342,9 @@ export function Alert({
   children: ReactNode;
 }) {
   const map = {
-    warn: "border-warn/30 bg-warn-faint text-warn",
-    danger: "border-danger/30 bg-danger-faint text-danger",
-    accent: "border-accent-dim/50 bg-accent-faint text-accent",
+    warn: "border-warn/30 bg-warn-soft text-warn",
+    danger: "border-danger/30 bg-danger-soft text-danger",
+    accent: "border-brand-border/50 bg-brand-soft text-brand",
   } as const;
   return (
     <div className={`rounded-control border px-3.5 py-2.5 text-small ${map[tone]}`}>{children}</div>
@@ -381,7 +389,7 @@ export function RouteTimeline({
         <li key={stop.id} className="relative flex gap-3">
           {index < stops.length - 1 ? (
             <span
-              className="absolute left-3 top-6 h-[calc(100%-8px)] w-px bg-ink-750"
+              className="absolute left-3 top-6 h-[calc(100%-8px)] w-px bg-ink-200"
               aria-hidden
             />
           ) : null}
@@ -389,23 +397,23 @@ export function RouteTimeline({
             className={[
               "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.625rem] font-bold",
               stop.done
-                ? "bg-laden text-ink-950"
+                ? "bg-laden text-white"
                 : stop.action === "pickup"
-                  ? "bg-accent text-ink-950"
-                  : "border border-ink-600 bg-ink-850 text-ink-300",
+                  ? "bg-brand text-white"
+                  : "border border-ink-400 bg-ink-100 text-ink-400",
             ].join(" ")}
           >
             {stop.done ? "✓" : stop.seq}
           </span>
           <span className="min-w-0 flex-1 pb-0.5">
             <span className="flex flex-wrap items-baseline gap-x-2">
-              <span className="text-body font-medium text-ink-100">{stop.name}</span>
+              <span className="text-body font-medium text-ink-900">{stop.name}</span>
               <span className="text-[0.6875rem] uppercase tracking-wide text-ink-500">
                 {stop.action === "pickup" ? "забрать" : "выгрузить"}
               </span>
             </span>
             {stop.detail ? (
-              <span className="block text-small text-ink-400">{stop.detail}</span>
+              <span className="block text-small text-ink-500">{stop.detail}</span>
             ) : null}
           </span>
         </li>
@@ -414,7 +422,7 @@ export function RouteTimeline({
       {origin ? (
         <li className="flex items-center gap-3">
           <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-            <span className="h-2 w-2 rounded-full border border-ink-600" />
+            <span className="h-2 w-2 rounded-full border border-ink-400" />
           </span>
           <span className="text-small text-ink-500">Возврат в {origin}</span>
         </li>

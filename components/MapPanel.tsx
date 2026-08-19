@@ -13,9 +13,9 @@ import type { RegionMapProps } from "./RegionMap";
 const RegionMap = dynamic(() => import("./RegionMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center rounded-card border border-ink-800 bg-ink-900/60">
+    <div className="flex h-full w-full items-center justify-center rounded-card border border-ink-200 bg-white">
       <div className="flex items-center gap-2.5 text-small text-ink-500">
-        <span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-accent" />
+        <span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-brand" />
         Карта области загружается
       </div>
     </div>
