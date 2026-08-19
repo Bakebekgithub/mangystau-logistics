@@ -93,6 +93,10 @@ CREATE TABLE trips (
   vehicle_id   text NOT NULL REFERENCES vehicles(id),
   status       text NOT NULL DEFAULT 'proposed'
                CHECK (status IN ('proposed', 'accepted', 'in_transit', 'completed', 'declined')),
+  -- Which story this trip tells, decided by the engine. Stored rather than
+  -- re-derived so the driver's card and the analytics agree.
+  kind         text NOT NULL
+               CHECK (kind IN ('backhaul', 'consolidation', 'backhaul+consolidation', 'single')),
 
   -- Economics are snapshotted at proposal time so that changing an assumption
   -- later never rewrites history in the analytics view.

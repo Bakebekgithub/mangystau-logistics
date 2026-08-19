@@ -408,22 +408,48 @@ export async function parseWithAi(text: string, context: ParseContext): Promise<
 }
 
 /**
+ * Once the API has told us the key cannot be used at all — no credit, revoked,
+ * wrong key — there is no point paying that round trip on every subsequent
+ * parse. A configured-but-unusable key would otherwise make every order slower
+ * than having no key at all, which is exactly the wrong behaviour on stage.
+ */
+let aiDisabledReason: string | null = null;
+
+function isPermanentFailure(error: unknown): boolean {
+  if (!(error instanceof Anthropic.APIError)) return false;
+  // 401/403: bad or revoked key. 400 with a billing message: no credit.
+  if (error.status === 401 || error.status === 403) return true;
+  return error.status === 400 && /credit balance|billing/i.test(error.message);
+}
+
+/**
  * Parses an order, preferring Claude and falling back to the dictionary parser.
  *
  * The fallback is not a stub: it is a second real implementation of the same
  * contract, which is why the product still works with no API key configured.
  */
 export async function parseOrder(text: string, context: ParseContext): Promise<ParsedOrder> {
-  if (!process.env.ANTHROPIC_API_KEY?.trim()) {
+  if (!process.env.ANTHROPIC_API_KEY?.trim() || aiDisabledReason) {
     return parseWithRules(text, context);
   }
   try {
     return await parseWithAi(text, context);
   } catch (error) {
+    const message = error instanceof Error ? error.message : "неизвестная ошибка";
+    if (isPermanentFailure(error)) {
+      aiDisabledReason = message;
+      console.warn(`[parse-order] ИИ-разбор отключён до перезапуска: ${message}`);
+    }
     const fallback = parseWithRules(text, context);
-    fallback.warnings.push(
-      `Разбор через ИИ не удался (${error instanceof Error ? error.message : "неизвестная ошибка"}), использован разбор по словарю`,
-    );
+    fallback.warnings.push(`Разбор через ИИ недоступен, использован разбор по словарю региона`);
     return fallback;
   }
+}
+
+/** For diagnostics: whether the AI path is currently in use, and why not. */
+export function aiStatus(): { available: boolean; reason: string | null } {
+  if (!process.env.ANTHROPIC_API_KEY?.trim()) {
+    return { available: false, reason: "ключ не настроен" };
+  }
+  return { available: aiDisabledReason === null, reason: aiDisabledReason };
 }
