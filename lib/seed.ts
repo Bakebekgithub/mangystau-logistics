@@ -25,6 +25,7 @@
  * and stage is a pitch that goes wrong.
  */
 
+import { classifyCargo } from "./engine/cargo-fit.ts";
 import { recommendedOrderPriceKzt } from "./engine/economics.ts";
 import type { Carrier, Order, PlaceKind, Settlement, Vehicle, VehicleKind } from "./types.ts";
 
@@ -278,7 +279,15 @@ export function generateSeed(settlements: Settlement[], config: SeedConfig): See
     // lorry, and cannot fill one either.
     const sizing = smaller(origin, destination);
     const [minKg, maxKg] = shipmentWeightRange(sizing.place, sizing.population);
-    const weight = Math.round(between(rng, minKg, maxKg) / 50) * 50;
+    let weight = Math.round(between(rng, minKg, maxKg) / 50) * 50;
+
+    // Loose freight does not travel by the sack. Sand, gravel and crushed stone
+    // are ordered by the truckload, and sizing them like a pallet of groceries
+    // produced 350 kg of gravel — an order no tipper would ever be sent for, and
+    // which then made every bulk trip look uneconomic.
+    if (classifyCargo(item.cargo) === "bulk") {
+      weight = Math.round(between(rng, 4000, 11000) / 500) * 500;
+    }
 
     // Ready within the next day and a half, deadline one to four days out.
     const readyOffsetH = between(rng, -6, 36);
