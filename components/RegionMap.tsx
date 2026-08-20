@@ -318,10 +318,15 @@ export default function RegionMap({
               <Tooltip
                 // Leaflet has no collision avoidance, so labels are pushed away
                 // from the middle of the region: western stops label to the left,
-                // eastern ones to the right. Crude, but it stops the pile-up that
-                // made the route unreadable.
-                direction={pin.lon < REGION_MID_LON ? "left" : "right"}
-                offset={pin.lon < REGION_MID_LON ? [-8, 0] : [8, 0]}
+                // eastern ones to the right. The vehicle's own label goes below
+                // instead — a truck usually starts near one of its own stops, and
+                // side-by-side the two labels overwrote each other.
+                direction={
+                  pin.kind === "vehicle" ? "bottom" : pin.lon < REGION_MID_LON ? "left" : "right"
+                }
+                offset={
+                  pin.kind === "vehicle" ? [0, 8] : pin.lon < REGION_MID_LON ? [-8, 0] : [8, 0]
+                }
                 permanent={pin.permanentLabel ?? pin.kind === "vehicle"}
                 className="!border-ink-200 !px-1.5 !py-0.5 !shadow-sm"
               >

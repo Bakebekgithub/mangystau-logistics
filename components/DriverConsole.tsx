@@ -98,7 +98,7 @@ function tripPins(trip: TripView): MapPin[] {
       lat: trip.at_lat,
       lon: trip.at_lon,
       kind: "vehicle",
-      label: `Старт ${trip.plate}`,
+      label: "Старт",
       permanentLabel: true,
     },
   ];
