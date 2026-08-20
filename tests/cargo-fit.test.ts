@@ -49,6 +49,16 @@ describe("cargo and body", () => {
     assert.equal(classifyCargo("щебня самосвал"), "bulk");
   });
 
+  it("does not mistake one word for another it merely contains", () => {
+    // Every one of these was wrong at some point: substring matching is cheap
+    // but it needs pinning down.
+    assert.equal(classifyCargo("бытовая техника"), "general");
+    assert.equal(bodyFitsCargo("flatbed", "бытовая техника"), false);
+    assert.equal(classifyCargo("солома"), "general");
+    assert.equal(classifyCargo("фасоль"), "general");
+    assert.equal(classifyCargo("металлолом"), "bulk");
+  });
+
   it("treats anything unfamiliar as packaged goods", () => {
     // The safe default: a closed body can take almost anything, an open one
     // or a tipper should not be offered a mystery.
