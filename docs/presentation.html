@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Mangystau Logistics — презентация</title>
+<style>
+  /* Slides are laid out at a fixed 16:9 so print and screen agree exactly. */
+  @page { size: 1280px 720px; margin: 0; }
+
+  :root {
+    --ink-900: #0F172A;
+    --ink-700: #334155;
+    --ink-600: #475569;
+    --ink-500: #64748B;
+    --ink-300: #CBD5E1;
+    --ink-200: #E2E8F0;
+    --ink-50:  #F8FAFC;
+    --brand:   #2563EB;
+    --brand-soft: #EFF5FF;
+    --brand-border: #BFD4FE;
+    --laden:   #0E8A6F;
+    --laden-ink: #0A6F59;
+    --laden-soft: #E7F6F1;
+    --empty:   #C2560D;
+    --empty-ink: #9C440A;
+    --empty-soft: #FDF0E6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    background: var(--ink-200);
+    color: var(--ink-900);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .slide {
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    padding: 64px 72px;
+    background: #fff;
+    overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+    display: flex;
+    flex-direction: column;
+  }
+  .slide:last-child { page-break-after: auto; }
+
+  @media screen {
+    body { padding: 32px 0; display: flex; flex-direction: column; align-items: center; gap: 28px; }
+    .slide { box-shadow: 0 8px 32px rgba(15, 23, 42, 0.14); border-radius: 6px; }
+  }
+
+  .eyebrow {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--brand);
+  }
+  h1 { font-size: 62px; line-height: 1.04; letter-spacing: -0.025em; font-weight: 700; }
+  h2 { font-size: 40px; line-height: 1.1; letter-spacing: -0.02em; font-weight: 700; }
+  h3 { font-size: 21px; line-height: 1.25; font-weight: 650; }
+  p, li { font-size: 19px; line-height: 1.5; color: var(--ink-600); }
+  .lead { font-size: 24px; line-height: 1.45; color: var(--ink-700); }
+  strong { color: var(--ink-900); font-weight: 650; }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  .num { font-size: 15px; font-weight: 600; color: var(--ink-500); }
+  .foot {
+    position: absolute; left: 72px; right: 72px; bottom: 30px;
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13px; color: var(--ink-500);
+    border-top: 1px solid var(--ink-200); padding-top: 12px;
+  }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+
+  .card {
+    border: 1px solid var(--ink-200); border-radius: 12px;
+    padding: 22px 24px; background: #fff;
+  }
+  .card.soft { background: var(--ink-50); }
+  .card.accent { background: var(--brand-soft); border-color: var(--brand-border); }
+  .card.good { background: var(--laden-soft); border-color: #A9DFD1; }
+  .card.cost { background: var(--empty-soft); border-color: #F5C9A3; }
+
+  .stat { font-size: 46px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  .stat.good { color: var(--laden-ink); }
+  .stat.cost { color: var(--empty-ink); }
+  .stat.brand { color: var(--brand); }
+  .stat-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--ink-500); margin-bottom: 10px;
+  }
+  .stat-sub { font-size: 15px; color: var(--ink-600); margin-top: 8px; line-height: 1.35; }
+
+  ul { list-style: none; }
+  ul.bullets li { position: relative; padding-left: 26px; margin-top: 13px; }
+  ul.bullets li::before {
+    content: ""; position: absolute; left: 4px; top: 11px;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--brand);
+  }
+  ul.bullets li.cost::before { background: var(--empty); }
+  ul.bullets li.good::before { background: var(--laden); }
+
+  .flow { display: flex; align-items: stretch; gap: 0; margin-top: 26px; }
+  .step { flex: 1; padding: 18px 16px 18px 22px; position: relative; }
+  .step + .step { border-left: 1px solid var(--ink-200); }
+  .step-n {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--brand);
+    color: #fff; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
+  }
+  .step h3 { font-size: 17px; }
+  .step p { font-size: 15px; line-height: 1.4; margin-top: 6px; }
+
+  .bar { display: flex; height: 26px; border-radius: 6px; overflow: hidden; gap: 2px; margin-top: 14px; }
+  .bar span { display: block; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { text-align: left; padding: 11px 14px; font-size: 17px; }
+  th {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--ink-500); border-bottom: 1px solid var(--ink-300);
+  }
+  td { border-bottom: 1px solid var(--ink-200); color: var(--ink-700); }
+  td.real { color: var(--laden-ink); font-weight: 600; }
+  td.modelled { color: var(--empty-ink); font-weight: 600; }
+
+  .kbd {
+    display: inline-block; padding: 3px 9px; border-radius: 6px;
+    background: var(--ink-50); border: 1px solid var(--ink-200);
+    font-size: 16px; color: var(--ink-700);
+  }
+  .quote {
+    border-left: 3px solid var(--brand); padding: 4px 0 4px 20px;
+    font-size: 21px; line-height: 1.45; color: var(--ink-700); font-style: italic;
+  }
+  .logo-mark {
+    display: inline-flex; align-items: center; gap: 11px;
+    font-size: 19px; font-weight: 650; color: var(--ink-900);
+  }
+  .logo-dot {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--brand);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .link { color: var(--brand); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- 1 — Титул -->
+<section class="slide" style="justify-content: space-between;">
+  <div class="logo-mark">
+    <span class="logo-dot">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/>
+      </svg>
+    </span>
+    Mangystau Logistics
+  </div>
+
+  <div>
+    <div class="eyebrow">Цифровая платформа грузоперевозок и последнего километра</div>
+    <h1 style="margin-top: 18px; max-width: 15.5em;">Область перевозит<br>тот же груз<br>на 8 000 км меньше</h1>
+    <p class="lead" style="margin-top: 26px; max-width: 34em;">
+      Диспетчер, который собирает из разрозненных заявок один рейс: попутные грузы вместе,
+      обратная загрузка вместо порожнего хода. Работающий MVP на реальной дорожной сети Мангистау.
+    </p>
+  </div>
+
+  <div class="grid3">
+    <div class="card soft">
+      <div class="stat-label">Приложение</div>
+      <div style="font-size:17px; font-weight:600; color:var(--brand);">mangystau-logistics.vercel.app</div>
+      <div class="stat-sub">Три экрана, живая база, карта области</div>
+    </div>
+    <div class="card soft">
+      <div class="stat-label">Код</div>
+      <div style="font-size:17px; font-weight:600; color:var(--brand);">github.com/Bakebekgithub/mangystau-logistics</div>
+      <div class="stat-sub">Next.js, PostgreSQL, 50 тестов</div>
+    </div>
+    <div class="card soft">
+      <div class="stat-label">Методология</div>
+      <div style="font-size:17px; font-weight:600; color:var(--brand);">/methodology</div>
+      <div class="stat-sub">Каждая цифра с источником</div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 — Проблема -->
+<section class="slide">
+  <div class="eyebrow">Проблема</div>
+  <h2 style="margin-top: 14px; max-width: 22em;">Машины в области ездят полупустыми, а село ждёт неделями</h2>
+
+  <div class="grid4" style="margin-top: 36px;">
+    <div class="card cost">
+      <div class="stat-label">Порожний пробег</div>
+      <div class="stat cost tnum">40%</div>
+      <div class="stat-sub">Цифра из кейса хакатона. Каждый второй-третий километр везёт воздух.</div>
+    </div>
+    <div class="card cost">
+      <div class="stat-label">Заявки живут в</div>
+      <div class="stat cost" style="font-size:34px;">WhatsApp</div>
+      <div class="stat-sub">Голосовые, «надо арматуру завтра», нет ни учёта, ни истории цен.</div>
+    </div>
+    <div class="card cost">
+      <div class="stat-label">Мелкий груз в село</div>
+      <div class="stat cost" style="font-size:34px;">никто<br>не берёт</div>
+      <div class="stat-sub">400 кг за 250 км не оправдывают выезда машины.</div>
+    </div>
+    <div class="card cost">
+      <div class="stat-label">Дороги области</div>
+      <div class="stat cost tnum">+53%</div>
+      <div class="stat-sub">На столько дорога длиннее прямой линии — измерено по 4158 маршрутам.</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 34px; display:grid; grid-template-columns: 1.05fr 1fr; gap: 32px;">
+    <div>
+      <h3>Почему это не решается объявлениями</h3>
+      <ul class="bullets" style="margin-top: 4px;">
+        <li>Биржа объявлений ждёт, что стороны <strong>сами</strong> найдут друг друга. Один груз — один водитель — один рейс.</li>
+        <li>Никто не сводит четыре мелкие заявки в одну машину: это работа, а не поиск.</li>
+        <li>Обратную загрузку водитель ищет вручную и обычно не находит — едет домой пустым.</li>
+      </ul>
+    </div>
+    <div class="card accent">
+      <h3 style="color: var(--brand);">Наш ответ</h3>
+      <p style="margin-top: 10px; color: var(--ink-700);">
+        Не доска объявлений, а <strong>диспетчер</strong>. Заказчик пишет сообщение — платформа
+        сама решает, с какими другими грузами он поедет, в каком порядке и на какой машине,
+        и предлагает водителю готовый рейс с ценой по каждому плечу.
+      </p>
+    </div>
+  </div>
+
+  <div class="foot"><span>Mangystau Logistics</span><span class="num">2</span></div>
+</section>
+
+<!-- 3 — Отличие от маркетплейса -->
+<section class="slide">
+  <div class="eyebrow">Ключевое отличие</div>
+  <h2 style="margin-top: 14px;">Маркетплейс ищет. Диспетчер — собирает.</h2>
+
+  <div class="grid2" style="margin-top: 38px; align-items: start;">
+    <div class="card">
+      <div class="stat-label">Как сегодня — биржа объявлений</div>
+      <h3 style="margin-top: 4px;">Четыре заявки — четыре рейса</h3>
+      <table>
+        <tr><td>Актау → Жанаозен, запчасти 1,8 т</td><td class="tnum" style="text-align:right;">303 км</td></tr>
+        <tr><td>Жанаозен → Мангистау, запчасти 5,5 т</td><td class="tnum" style="text-align:right;">201 км</td></tr>
+        <tr><td>Актау → Тенге, арматура 3 т</td><td class="tnum" style="text-align:right;">311 км</td></tr>
+        <tr><td>Кызылтобе → Актау, мясо 3,5 т</td><td class="tnum" style="text-align:right;">111 км</td></tr>
+      </table>
+      <div class="bar">
+        <span style="background: var(--laden); width: 50%;"></span>
+        <span style="background: var(--empty); width: 50%;"></span>
+      </div>
+      <p style="margin-top: 10px; font-size:16px;">
+        <strong class="tnum">926 км</strong> суммарно, из них <strong style="color:var(--empty-ink)">половина порожняком</strong>:
+        каждая машина возвращается пустой.
+      </p>
+    </div>
+
+    <div class="card good">
+      <div class="stat-label">С диспетчером — один рейс</div>
+      <h3 style="margin-top: 4px;">Те же четыре груза, одна машина</h3>
+      <p style="margin-top: 12px; font-size:17px; color: var(--ink-700);">
+        Жанаозен → Мангистау → Актау → Тенге → Жанаозен. Груз выгружается там,
+        где стоит следующий, а на обратном плече машина везёт мясо в Актау.
+      </p>
+      <div class="bar">
+        <span style="background: var(--laden); width: 100%;"></span>
+      </div>
+      <p style="margin-top: 10px; font-size:16px;">
+        <strong class="tnum">318 км</strong> вместо 926,
+        <strong style="color:var(--laden-ink)">100% километров с грузом</strong>,
+        водителю платят <strong class="tnum">256 500 ₸</strong> вместо одной ставки.
+      </p>
+      <p style="margin-top: 14px; font-size:16px;">
+        Это настоящий рейс из демо, а не пример на салфетке: движок собрал его сам
+        из пула 48 заявок.
+      </p>
+    </div>
+  </div>
+
+  <p class="quote" style="margin-top: 32px;">
+    Заявку создавать всё равно надо — но дальше начинается работа, которой на бирже нет:
+    перебор комбинаций, порядок остановок, проверка веса и сроков.
+  </p>
+
+  <div class="foot"><span>Mangystau Logistics</span><span class="num">3</span></div>
+</section>
+
+<!-- 4 — Как это работает -->
+<section class="slide">
+  <div class="eyebrow">Как это работает</div>
+  <h2 style="margin-top: 14px;">От сообщения в мессенджере до выполненного рейса</h2>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-n">1</div>
+      <h3>Заказчик пишет словами</h3>
+      <p><span class="kbd">надо 3 тонны арматуры из Актау в Жанаозен завтра до обеда</span></p>
+      <p>Разбор вытаскивает откуда, куда, что, сколько, к какому сроку. Заказчик видит,
+        как его поняли, и правит.</p>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <h3>Ставит свою цену</h3>
+      <p>Платформа показывает рекомендованный минимум по этому плечу. Сумму пишет заказчик —
+        20 000, 50 000, сколько считает нужным.</p>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <h3>Движок собирает рейс</h3>
+      <p>Перебирает комбинации заявок и порядок остановок, проверяет вес, рефрижератор
+        и сроки. Считает километры по реальным дорогам.</p>
+    </div>
+    <div class="step">
+      <div class="step-n">4</div>
+      <h3>Водитель видит разбивку</h3>
+      <p>Каждое плечо: что, откуда куда, кто отправляет и сколько платят. Может убрать
+        один груз или назвать свою цену.</p>
+    </div>
+    <div class="step">
+      <div class="step-n">5</div>
+      <h3>Едет и отмечает</h3>
+      <p>Взял рейс — открылись телефоны отправителей. «Забрал», «Доставил»; заказчик
+        видит статус у себя.</p>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-top: 40px;">
+    <div class="card soft">
+      <div class="stat-label">Экран отправителя</div>
+      <p style="font-size:16px;">Одно поле ввода вместо формы. Свои заявки, кто повёз, номер водителя, статус.</p>
+    </div>
+    <div class="card soft">
+      <div class="stat-label">Экран перевозчика</div>
+      <p style="font-size:16px;">Профиль машины — тип кузова и тоннаж. Показываются только рейсы, которые в неё влезут.</p>
+    </div>
+    <div class="card soft">
+      <div class="stat-label">Экран акимата</div>
+      <p style="font-size:16px;">Порожние коридоры области, сколько километров и топлива не поехало, обслужены ли малые села.</p>
+    </div>
+  </div>
+
+  <div class="foot"><span>Mangystau Logistics</span><span class="num">4</span></div>
+</section>
+
+<!-- 5 — Цена -->
+<section class="slide">
+  <div class="eyebrow">Цена</div>
+  <h2 style="margin-top: 14px; max-width: 26em;">Мы не выдумываем тариф региона. Цену ставит заказчик, платформа считает пол.</h2>
+
+  <div class="grid2" style="margin-top: 34px; align-items: start;">
+    <div>
+      <h3>Почему так, а не «ставка за тонно-километр»</h3>
+      <p style="margin-top: 10px;">
+        Реальных фрахтовых ставок Мангистау у нас нет. Подставить выдуманную цифру — значит
+        поставить весь расчёт на догадку: первый же вопрос «откуда ставка?» её сносит.
+        Поэтому цена в системе — <strong>это то, что предложил живой заказчик</strong>,
+        ровно как сегодня по телефону.
+      </p>
+      <h3 style="margin-top: 26px;">Что мы действительно можем посчитать</h3>
+      <ul class="bullets" style="margin-top: 2px;">
+        <li>Расстояние — по настоящей дорожной сети, а не по прямой</li>
+        <li>Расход топлива — с надбавкой за загрузку</li>
+        <li>Цену дизеля — розница Казахстана, август 2026</li>
+      </ul>
+      <p style="margin-top: 18px;">
+        Из этих трёх получается <strong>минимум, ниже которого перевозчик едет в убыток</strong>.
+        Это подсказка, а не прайс.
+      </p>
+    </div>
+
+    <div>
+      <div class="card accent">
+        <div class="stat-label">Пример: Актау → Жанаозен, арматура 3 т</div>
+        <table>
+          <tr><td>Дорога</td><td class="tnum" style="text-align:right;">151 км</td></tr>
+          <tr><td>Топливо на груженое плечо</td><td class="tnum" style="text-align:right;">27 л</td></tr>
+          <tr><td>× 335 ₸/л дизель</td><td class="tnum" style="text-align:right;">9 045 ₸</td></tr>
+          <tr><td>÷ 0,38 — доля топлива в затратах</td><td class="tnum" style="text-align:right;">23 800 ₸</td></tr>
+          <tr><td>× доля кузова под грузом (100%)</td><td class="tnum" style="text-align:right;">×1,0</td></tr>
+        </table>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:16px;">
+          <strong style="font-size:18px;">Рекомендуем от</strong>
+          <span class="stat brand tnum" style="font-size:36px;">24 000 ₸</span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 18px;">
+        <h3>Мелкий груз не стоит десятой части фуры</h3>
+        <p style="margin-top: 8px; font-size:17px;">
+          300 кг занимают десятую часть кузова, но кто-то всё равно едет весь маршрут.
+          Поэтому доля кузова считается <strong>не меньше 30%</strong> — иначе рекомендация
+          для села была бы издевательской.
+        </p>
+      </div>
+
+      <div class="card good" style="margin-top: 18px;">
+        <h3 style="color: var(--laden-ink);">Торг внутри системы</h3>
+        <p style="margin-top: 8px; font-size:17px;">
+          Водитель может назвать свою цену за конкретный груз, заказчик — согласиться.
+          Договорённость остаётся в данных, а не в чьей-то переписке.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>Mangystau Logistics</span><span class="num">5</span></div>
+</section>
+
+<!-- 6 — Результат -->
+<section class="slide">
+  <div class="eyebrow">Результат на данных области</div>
+  <h2 style="margin-top: 14px;">48 заявок, 18 машин, один прогон движка</h2>
+
+  <div class="grid4" style="margin-top: 34px;">
+    <div class="card good">
+      <div class="stat-label">Оплачиваемых километров</div>
+      <div class="stat good tnum">78%</div>
+      <div class="stat-sub">Против <strong>50%</strong> — потолка, который физически недостижим без обратной загрузки.</div>
+    </div>
+    <div class="card good">
+      <div class="stat-label">Километров не поедет</div>
+      <div class="stat good tnum">7 963</div>
+      <div class="stat-sub">Против сценария «каждая заявка — свой рейс туда и обратно».</div>
+    </div>
+    <div class="card good">
+      <div class="stat-label">Топлива сэкономлено</div>
+      <div class="stat good tnum">2 309 л</div>
+      <div class="stat-sub">= <strong>773 000 ₸</strong> по розничной цене дизеля.</div>
+    </div>
+    <div class="card accent">
+      <div class="stat-label">Заявок закрыто</div>
+      <div class="stat brand tnum">41 / 48</div>
+      <div class="stat-sub">11 рейсами. Остальные 7 — вес, рефрижератор или срок.</div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top: 34px; align-items: start;">
+    <div class="card">
+      <h3>Экономика одного рейса — глазами водителя</h3>
+      <table>
+        <tr><td>Заказчики предлагают (4 груза)</td><td class="tnum" style="text-align:right; color: var(--laden-ink); font-weight:600;">256 500 ₸</td></tr>
+        <tr><td>Топливо на рейс</td><td class="tnum" style="text-align:right; color: var(--empty-ink);">−78 000 ₸</td></tr>
+        <tr><td>Порожний пробег</td><td class="tnum" style="text-align:right;">0 км</td></tr>
+        <tr><td>Дистанция</td><td class="tnum" style="text-align:right;">1 001 км</td></tr>
+      </table>
+      <p style="margin-top: 12px; font-size:16px;">
+        Ни одна цифра заработка не придумана движком: это сумма того, что предложили
+        четыре живых заказчика.
+      </p>
+    </div>
+    <div class="card">
+      <h3>Что это меняет для области</h3>
+      <ul class="bullets" style="margin-top: 2px;">
+        <li class="good"><strong>6 малых удалённых пунктов</strong> получили груз, который по отдельности никто бы не повёз</li>
+        <li class="good">Порожние коридоры видны акимату по именам: Кызылсай → Шетпе, Актау → Баскудук</li>
+        <li class="good">Тот же парк машин перевозит больше — без единого нового грузовика</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot"><span>Mangystau Logistics · цифры с боевого деплоя, 20 августа 2026</span><span class="num">6</span></div>
+</section>
+
+<!-- 7 — Данные -->
+<section class="slide">
+  <div class="eyebrow">Данные</div>
+  <h2 style="margin-top: 14px;">Что здесь настоящее, а что смоделировано</h2>
+  <p class="lead" style="margin-top: 16px; max-width: 46em;">
+    Разделено честно и открыто: у продукта есть страница методологии, где каждая цифра
+    подписана источником. Ни один заказчик Мангистау не отдаст свою книгу заказов, поэтому
+    спрос смоделирован — но смоделирован <strong>из структуры самой области</strong>, а не из случайных чисел.
+  </p>
+
+  <table style="margin-top: 26px;">
+    <thead>
+      <tr><th>Что</th><th>Статус</th><th>Источник и как проверить</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>65 населённых пунктов области</td><td class="real">реальные</td><td>OpenStreetMap, официальный API отношения области, лицензия ODbL</td></tr>
+      <tr><td>4 160 дорожных расстояний между ними</td><td class="real">реальные</td><td>OSRM по дорожной сети OSM — по дорогам, не по прямой</td></tr>
+      <tr><td>Контур Мангистауской области на карте</td><td class="real">реальный</td><td>Собран из участков границы OSM, упрощён алгоритмом Рамера — Дугласа — Пекера</td></tr>
+      <tr><td>Цена дизельного топлива, 335 ₸/л</td><td class="real">реальная</td><td>Розница Казахстана, август 2026; отчётный диапазон 330–343, взята середина</td></tr>
+      <tr><td>Порожний пробег в области, 40%</td><td class="real">реальный</td><td>Цифра из кейса хакатона — сознательно чужая, чтобы базу нельзя было упрекнуть в подгонке</td></tr>
+      <tr><td>Кто что отправляет: 48 заявок</td><td class="modelled">смоделировано</td><td>Генератор по структуре области: города отправляют, села принимают, вес по населению</td></tr>
+      <tr><td>Парк: 14 перевозчиков, 18 машин</td><td class="modelled">смоделировано</td><td>Названия вымышлены намеренно, чтобы демо не приняли за утверждение о реальной фирме</td></tr>
+      <tr><td>Надбавка к расходу за полную загрузку, 30%</td><td class="modelled">допущение</td><td>Отраслевое правило; выбрано консервативно — делает собранные рейсы дороже, а не дешевле</td></tr>
+      <tr><td>Доля топлива в затратах перевозчика, 0,38</td><td class="modelled">допущение</td><td>Заявлено открыто; используется только для рекомендованного минимума</td></tr>
+    </tbody>
+  </table>
+
+  <div class="foot"><span>mangystau-logistics.vercel.app/methodology</span><span class="num">7</span></div>
+</section>
+
+<!-- 8 — Как собирается рейс -->
+<section class="slide">
+  <div class="eyebrow">Движок</div>
+  <h2 style="margin-top: 14px;">Точный перебор, а не «примерно похоже»</h2>
+
+  <div class="grid2" style="margin-top: 32px; align-items: start;">
+    <div>
+      <h3>Что происходит внутри</h3>
+      <ul class="bullets" style="margin-top: 2px;">
+        <li>Для свободной машины отбираются заявки, которые она <strong>физически</strong> может взять: вес, рефрижератор для скоропорта, срок ещё не истёк</li>
+        <li>Перебираются комбинации заявок, и для каждой ищется порядок остановок — <strong>полным перебором</strong> с тремя отсечениями</li>
+        <li>Погрузка всегда раньше выгрузки; вес никогда не превышает вместимость; ветка отбрасывается, как только становится длиннее лучшей найденной</li>
+        <li>Машины распределяются жадно, с пересчётом планов после каждого назначения — иначе половина заявок остаётся без рейса</li>
+      </ul>
+
+      <div class="card soft" style="margin-top: 24px;">
+        <h3>Почему это важно на питче</h3>
+        <p style="margin-top: 8px; font-size:17px;">
+          Маршрут <strong>оптимален</strong> для того числа заявок, которое водитель берёт за раз —
+          это доказуемо, а не эвристика. Полный прогон по всей области занимает 7 секунд.
+        </p>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h3>Экономика считается честно</h3>
+        <p style="margin-top: 10px; font-size:17px;">
+          Тонкий момент, который решает, выдержит ли расчёт проверку: обратный груз
+          <strong>не экономит топливо этому водителю</strong> — он едет те же километры,
+          они просто становятся оплачиваемыми.
+        </p>
+        <p style="margin-top: 12px; font-size:17px;">
+          Реально сэкономленное топливо — <strong>региональное</strong>: второму заказчику
+          больше не нужен отдельный выезд. Поэтому экономия всегда считается против базы
+          «каждая заявка — свой рейс туда и обратно», как область работает сегодня.
+        </p>
+        <p style="margin-top: 12px; font-size:17px;">
+          Маршрут в расчёте <strong>замыкается назад к базе</strong> — иначе экономию можно
+          было бы «улучшить», просто бросив машину в конечной точке.
+        </p>
+      </div>
+
+      <div class="card good" style="margin-top: 18px;">
+        <h3 style="color: var(--laden-ink);">Мы сами отказались от красивой цифры</h3>
+        <p style="margin-top: 8px; font-size:17px;">
+          Первая версия базы давала «64% километров не поедет». Она была завышена, и мы
+          пересчитали её к цифре кейса — 40%. Слайд с результатом стал скромнее,
+          зато он верный.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>50 автоматических тестов, из них 6 — на свойства рекомендованной цены</span><span class="num">8</span></div>
+</section>
+
+<!-- 9 — Технологии -->
+<section class="slide">
+  <div class="eyebrow">Как это сделано</div>
+  <h2 style="margin-top: 14px;">Работающий продукт, а не макет</h2>
+
+  <div class="grid3" style="margin-top: 34px;">
+    <div class="card">
+      <div class="stat-label">Приложение</div>
+      <h3>Next.js 16 · React 19 · TypeScript</h3>
+      <p style="margin-top: 10px; font-size:16px;">
+        Один адрес, три роли, адаптивная вёрстка: у водителя это телефон, у акимата — монитор.
+      </p>
+    </div>
+    <div class="card">
+      <div class="stat-label">База данных</div>
+      <h3>PostgreSQL (Neon)</h3>
+      <p style="margin-top: 10px; font-size:16px;">
+        7 таблиц. Локально — та же самая Postgres в WASM, так что схема одна и та же,
+        без «у меня работало».
+      </p>
+    </div>
+    <div class="card">
+      <div class="stat-label">Карта</div>
+      <h3>Leaflet, свой контур области</h3>
+      <p style="margin-top: 10px; font-size:16px;">
+        Без сторонних тайлов: карта не зависит от чужого сервера и не отвалится на сцене
+        из-за интернета.
+      </p>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top: 26px; align-items: start;">
+    <div class="card soft">
+      <h3>Разбор сообщений — два независимых пути</h3>
+      <p style="margin-top: 10px; font-size:17px;">
+        Первый — модель Claude со строгой схемой ответа. Второй — <strong>словарь региона</strong>:
+        65 пунктов вместе с казахскими и русскими написаниями, единицы веса, «завтра до обеда».
+      </p>
+      <p style="margin-top: 10px; font-size:17px;">
+        Второй путь не заглушка, а полноценная реализация того же контракта — 12 тестов.
+        <strong>Демо работает без интернета и без ключа</strong>, и на экране всегда видно,
+        чем разобрано.
+      </p>
+    </div>
+    <div class="card soft">
+      <h3>Что проверяется автоматически</h3>
+      <ul class="bullets" style="margin-top: 2px;">
+        <li>Порядок остановок: погрузка раньше выгрузки, вес в пределах кузова</li>
+        <li>Экономика: маршрут замкнут, база считается одинаково для всех</li>
+        <li>Свойства рекомендованной цены: растёт с расстоянием, мелкий груз не дешевеет до абсурда</li>
+        <li>Разбор: казахские и русские названия, единицы веса, кириллица в границах слов</li>
+      </ul>
+      <p style="margin-top: 14px; font-size:16px;">
+        <strong>50 тестов, все зелёные.</strong> Плюс палитра проверена на цветовую слепоту
+        расчётом, а не на глаз.
+      </p>
+    </div>
+  </div>
+
+  <div class="foot"><span>github.com/Bakebekgithub/mangystau-logistics</span><span class="num">9</span></div>
+</section>
+
+<!-- 10 — Живое демо -->
+<section class="slide">
+  <div class="eyebrow">Демонстрация</div>
+  <h2 style="margin-top: 14px;">Полный цикл за две минуты, на настоящих API</h2>
+
+  <div class="flow" style="margin-top: 30px;">
+    <div class="step">
+      <div class="step-n">1</div>
+      <h3>Пишем заявку</h3>
+      <p>Своими словами, как в мессенджере. Смотрим, как её поняли.</p>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <h3>Ставим цену</h3>
+      <p>Платформа советует минимум — ставим своё число.</p>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <h3>Открываем перевозчика</h3>
+      <p>Наша заявка уже в рейсе, первой в списке, с ценой и разбивкой.</p>
+    </div>
+    <div class="step">
+      <div class="step-n">4</div>
+      <h3>Торгуемся</h3>
+      <p>Водитель просит больше — заказчик соглашается у себя.</p>
+    </div>
+    <div class="step">
+      <div class="step-n">5</div>
+      <h3>Берём рейс и едем</h3>
+      <p>Открылись телефоны. «Забрал», «Доставил» — статус виден заказчику.</p>
+    </div>
+    <div class="step">
+      <div class="step-n">6</div>
+      <h3>Смотрим область</h3>
+      <p>Экран акимата: сколько километров и топлива не поехало.</p>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top: 38px; align-items: start;">
+    <div class="card accent">
+      <h3 style="color: var(--brand);">Демо-режим встроен в продукт</h3>
+      <p style="margin-top: 10px; font-size:17px;">
+        Вкладка <strong>«Демо»</strong> проходит эти шаги сама, дёргая те же самые эндпоинты,
+        что и живой пользователь. Ничего не имитируется: каждый шаг — реальный запрос
+        к реальной базе.
+      </p>
+    </div>
+    <div class="card soft">
+      <h3>Состояние воспроизводимо</h3>
+      <p style="margin-top: 10px; font-size:17px;">
+        Спрос генерируется от фиксированного зерна, поэтому на репетиции и на сцене
+        область выглядит одинаково. Питч, который меняет форму между прогоном
+        и выступлением, — это питч, который ломается.
+      </p>
+    </div>
+  </div>
+
+  <div class="foot"><span>mangystau-logistics.vercel.app/demo</span><span class="num">10</span></div>
+</section>
+
+<!-- 11 — Границы и дальше -->
+<section class="slide">
+  <div class="eyebrow">Честные границы</div>
+  <h2 style="margin-top: 14px;">Что осталось за рамками MVP — и что дальше</h2>
+
+  <div class="grid2" style="margin-top: 32px; align-items: start;">
+    <div class="card">
+      <div class="stat-label">Сознательно не делали</div>
+      <ul class="bullets" style="margin-top: 8px;">
+        <li class="cost"><strong>Личные кабинеты и вход.</strong> Роль выбирается вкладкой — на демо это быстрее, в проде это первое, что появится</li>
+        <li class="cost"><strong>Оплата и эскроу.</strong> Стороны рассчитываются как сегодня; платформа фиксирует договорённость</li>
+        <li class="cost"><strong>Документы и страхование груза.</strong> Требует юридической части, не проверяется за сутки</li>
+        <li class="cost"><strong>GPS-трекинг.</strong> Сейчас статус отмечает водитель кнопкой</li>
+        <li class="cost"><strong>Реальные фрахтовые ставки.</strong> Их у нас нет — и мы не стали их выдумывать</li>
+      </ul>
+    </div>
+
+    <div class="card good">
+      <div class="stat-label">Следующие шаги</div>
+      <ul class="bullets" style="margin-top: 8px;">
+        <li class="good"><strong>Дозагрузка попутного рейса.</strong> «Я еду Актау → Бейнеу, свободно 3 тонны» — движок докидывает груз и ищет обратку</li>
+        <li class="good"><strong>Ставки из фактических сделок.</strong> Когда через систему пройдут первые рейсы, рекомендация перестанет опираться на допущение</li>
+        <li class="good"><strong>Приём заявок прямо из WhatsApp.</strong> Канал, где они уже живут; разбор готов</li>
+        <li class="good"><strong>Регулярные маршруты села.</strong> Расписание вместо ожидания попутки</li>
+      </ul>
+      <p style="margin-top: 16px; font-size:16px;">
+        Одна цифра в коде — и рекомендованный минимум переключается на реальные ставки:
+        <span class="kbd">fuelShareOfOperatingCost</span>. Это заложено намеренно.
+      </p>
+    </div>
+  </div>
+
+  <div class="foot"><span>Mangystau Logistics</span><span class="num">11</span></div>
+</section>
+
+<!-- 12 — Финал -->
+<section class="slide" style="justify-content: space-between;">
+  <div class="logo-mark">
+    <span class="logo-dot">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/>
+      </svg>
+    </span>
+    Mangystau Logistics
+  </div>
+
+  <div>
+    <h1 style="max-width: 17em;">Тот же парк машин.<br>Больше перевезённого груза.<br>Ни одной выдуманной цифры.</h1>
+    <div class="grid3" style="margin-top: 44px;">
+      <div class="card good">
+        <div class="stat-label">Оплачиваемых километров</div>
+        <div class="stat good tnum">78%</div>
+        <div class="stat-sub">потолок без обратной загрузки — 50%</div>
+      </div>
+      <div class="card good">
+        <div class="stat-label">Не поедет по области</div>
+        <div class="stat good tnum">7 963 км</div>
+        <div class="stat-sub">2 309 литров топлива, 773 000 ₸</div>
+      </div>
+      <div class="card accent">
+        <div class="stat-label">Работает прямо сейчас</div>
+        <div class="stat brand tnum">3 экрана</div>
+        <div class="stat-sub">живая база, карта, 50 тестов</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2" style="align-items: end;">
+    <div>
+      <div class="stat-label">Приложение и код</div>
+      <p style="font-size:19px;"><span class="link">mangystau-logistics.vercel.app</span></p>
+      <p style="font-size:19px;"><span class="link">github.com/Bakebekgithub/mangystau-logistics</span></p>
+    </div>
+    <div style="text-align: right;">
+      <div class="stat-label">Кейс</div>
+      <p style="font-size:17px;">Цифровая платформа грузоперевозок<br>и последнего километра · Мангистауская область</p>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

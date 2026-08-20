@@ -440,9 +440,12 @@ export async function parseOrder(text: string, context: ParseContext): Promise<P
       aiDisabledReason = message;
       console.warn(`[parse-order] ИИ-разбор отключён до перезапуска: ${message}`);
     }
-    const fallback = parseWithRules(text, context);
-    fallback.warnings.push(`Разбор через ИИ недоступен, использован разбор по словарю региона`);
-    return fallback;
+    // No warning is added. `warnings` is for problems with the shipper's own
+    // message — a weight that could not be read, a place that is not in the
+    // region — and it is rendered as such. Which of the two parsers ran is not
+    // the shipper's problem, is not an error, and is already stated by the badge
+    // above the draft. Surfacing it here read as a breakage.
+    return parseWithRules(text, context);
   }
 }
 

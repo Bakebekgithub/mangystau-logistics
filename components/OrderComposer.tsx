@@ -278,14 +278,28 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
               </div>
 
               {floor ? (
-                <p className="mt-2.5 text-small text-ink-600">
-                  Рекомендуем от <span className="tnum font-semibold text-ink-900">{kzt(floor.price_kzt)}</span>{" "}
-                  — это себестоимость плеча {Math.round(floor.km)} км: топливо{" "}
-                  {floor.fuel_l.toFixed(0)} л × {ASSUMPTIONS.dieselPriceKztPerL} ₸ ÷ {ASSUMPTIONS.fuelShareOfOperatingCost}, с учётом того,
-                  что груз занимает {Math.round(floor.charged_share * 100)}% кузова. Ниже этой суммы
-                  перевозчик едет в убыток. Цену ставите вы — перевозчик может согласиться или
-                  предложить свою.
-                </p>
+                <div className="mt-2.5 text-small text-ink-600">
+                  <p>
+                    Рекомендуем от{" "}
+                    <span className="tnum font-semibold text-ink-900">{kzt(floor.price_kzt)}</span>. Плечо{" "}
+                    <span className="tnum">{Math.round(floor.km)} км</span>. Под такой вес берём самую
+                    маленькую подходящую машину —{" "}
+                    <span className="tnum">{floor.capacity_kg / 1000}-тонник</span>: груз занимает{" "}
+                    <span className="tnum">{Math.round(floor.charged_share * 100)}%</span> её кузова, за эту
+                    долю и считаем.
+                  </p>
+                  <p className="mt-1.5">
+                    Топливо на груженое плечо{" "}
+                    <span className="tnum">
+                      {floor.fuel_l.toFixed(0)} л × {ASSUMPTIONS.dieselPriceKztPerL} ₸
+                    </span>{" "}
+                    делим на {ASSUMPTIONS.fuelShareOfOperatingCost} — долю топлива в затратах перевозчика.
+                    Ниже этой суммы он едет в убыток.
+                  </p>
+                  <p className="mt-1.5">
+                    Это не тариф: цену ставите вы, перевозчик соглашается или предлагает свою.
+                  </p>
+                </div>
               ) : (
                 <p className="mt-2.5 text-small text-ink-600">
                   Укажите маршрут и вес — покажем рекомендованный минимум.
