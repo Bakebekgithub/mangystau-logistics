@@ -26,6 +26,15 @@ export interface MapArc {
   weight?: number;
   label?: string;
   /**
+   * Position of this leg in the trip, drawn on the line.
+   *
+   * Direction alone was not enough. A truck standing at its own drop-off point
+   * drives out empty first and comes back loaded, and a reader seeing only an
+   * arrow toward the pickup concludes the empty leg is the return. Numbering the
+   * legs is what makes the order readable.
+   */
+  order?: number;
+  /**
    * Draw a chevron at the midpoint pointing the way the truck travels.
    *
    * Colour already carries whether a leg is paid or empty, which is the point of
@@ -255,6 +264,24 @@ export default function RegionMap({
                   </Tooltip>
                 ) : null}
               </Polyline>
+
+              {arc.order !== undefined && !dimmed ? (
+                <CircleMarker
+                  center={points[Math.floor(points.length / 3)]!}
+                  radius={0}
+                  pathOptions={{ opacity: 0, fillOpacity: 0 }}
+                  interactive={false}
+                >
+                  <Tooltip permanent direction="center" className="!border-none !bg-transparent !p-0 !shadow-none">
+                    <span
+                      className="flex h-[17px] w-[17px] items-center justify-center rounded-full text-[10px] font-bold text-white"
+                      style={{ backgroundColor: colour }}
+                    >
+                      {arc.order}
+                    </span>
+                  </Tooltip>
+                </CircleMarker>
+              ) : null}
 
               {arc.arrow && !dimmed
                 ? chevron(points).map((barbs, index) => (

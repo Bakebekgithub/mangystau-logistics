@@ -28,6 +28,7 @@ const KIND: Record<TripView["kind"], { label: string; tone: "laden" | "accent" |
  */
 function tripArcs(trip: TripView): MapArc[] {
   const arcs: MapArc[] = [];
+  let leg = 0;
   let at: [number, number] = [trip.at_lat, trip.at_lon];
   let atName = trip.at_name;
   let load = 0;
@@ -45,6 +46,7 @@ function tripArcs(trip: TripView): MapArc[] {
           : index === 0
             ? "подъезд к первой погрузке, порожний"
             : "порожний";
+      leg += 1;
       arcs.push({
         id: `${trip.id}-leg-${index}`,
         from: at,
@@ -52,7 +54,8 @@ function tripArcs(trip: TripView): MapArc[] {
         laden: load > 0,
         weight: 0.5,
         arrow: true,
-        label: `${atName} → ${stop.settlement_name} · ${cargoNote}`,
+        order: leg,
+        label: `Плечо ${leg}: ${atName} → ${stop.settlement_name} · ${cargoNote}`,
       });
     }
 
@@ -69,6 +72,7 @@ function tripArcs(trip: TripView): MapArc[] {
 
   const home: [number, number] = [trip.at_lat, trip.at_lon];
   if (at[0] !== home[0] || at[1] !== home[1]) {
+    leg += 1;
     arcs.push({
       id: `${trip.id}-leg-return`,
       from: at,
@@ -76,7 +80,8 @@ function tripArcs(trip: TripView): MapArc[] {
       laden: false,
       weight: 0.5,
       arrow: true,
-      label: `${atName} → ${trip.at_name} · возврат на базу, порожний`,
+      order: leg,
+      label: `Плечо ${leg}: ${atName} → ${trip.at_name} · возврат на базу, порожний`,
     });
   }
   return arcs;
@@ -97,16 +102,22 @@ function tripPins(trip: TripView): MapPin[] {
     else bySettlement.set(stop.settlement_id, { stops: [stop], lat: stop.lat, lon: stop.lon });
   }
 
-  const pins: MapPin[] = [
-    {
-      id: `${trip.id}-vehicle`,
-      lat: trip.at_lat,
-      lon: trip.at_lon,
-      kind: "vehicle",
-      label: `Старт · ${trip.at_name}`,
-      permanentLabel: true,
-    },
-  ];
+  // A truck often stands at a settlement that is also one of its stops. Two
+  // labels on one dot were unreadable, so the stop label carries the start.
+  const startsAtAStop = trip.stops.some((stop) => stop.settlement_name === trip.at_name);
+
+  const pins: MapPin[] = startsAtAStop
+    ? []
+    : [
+        {
+          id: `${trip.id}-vehicle`,
+          lat: trip.at_lat,
+          lon: trip.at_lon,
+          kind: "vehicle",
+          label: `Старт · ${trip.at_name}`,
+          permanentLabel: true,
+        },
+      ];
 
   for (const [settlementId, entry] of bySettlement) {
     // Every number, not a range. "1–5 Шетпе" hid that the truck comes back to
@@ -122,7 +133,10 @@ function tripPins(trip: TripView): MapPin[] {
       lon: entry.lon,
       kind: actions.has("pickup") ? "pickup" : "dropoff",
       seq: seqs[0],
-      label: `${numbers} ${entry.stops[0]!.settlement_name}`,
+      label:
+        entry.stops[0]!.settlement_name === trip.at_name
+          ? `Старт · ${numbers} ${entry.stops[0]!.settlement_name}`
+          : `${numbers} ${entry.stops[0]!.settlement_name}`,
       permanentLabel: true,
     });
   }
@@ -791,9 +805,9 @@ function MapLegend({ trip }: { trip: TripView }) {
         {km(trip.total_km)} · порожний {km(trip.empty_km)} · оплачиваемых {percent(trip.paid_km_share)}
       </div>
       <div className="mt-1 max-w-[19rem] text-[0.6875rem] leading-snug text-ink-500">
-        Цифры у точек — порядок остановок. Пунктир — подъезд от текущего места машины
-        к первой погрузке и возврат на базу: эти километры никто не оплачивает, их и
-        сокращает подбор обратного груза. Наведите на линию — покажет, что в кузове.
+        Цифры на линиях — порядок плеч, у точек — порядок остановок. Пунктир — подъезд
+        от текущего места машины к первой погрузке и возврат на базу: эти километры
+        никто не оплачивает. Наведите на линию — покажет, что в кузове.
       </div>
     </div>
   );
