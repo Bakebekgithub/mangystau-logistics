@@ -107,7 +107,11 @@ export default async function ShipperPage() {
                     ) : null}
 
                     {order.price_status === "countered" && order.counter_price_kzt ? (
-                      <CounterOffer orderId={order.id} price={order.counter_price_kzt} />
+                      <CounterOffer
+                        orderId={order.id}
+                        price={order.counter_price_kzt}
+                        ownPrice={order.offered_price_kzt}
+                      />
                     ) : null}
 
                     {order.carrier_plate && order.trip_status === "proposed" ? (

@@ -381,3 +381,34 @@ export async function acceptCounter(orderId: string): Promise<boolean> {
   );
   return rows.length > 0;
 }
+
+/**
+ * The shipper answers a counter with a figure of their own.
+ *
+ * Clears the carrier's counter and puts the ball back in their court, which is
+ * how a phone negotiation actually goes: nobody's first number is final, and
+ * either side can move.
+ */
+export async function setShipperPrice(orderId: string, priceKzt: number): Promise<boolean> {
+  const db = getDb();
+  const rows = await db.query<{ id: string }>(
+    `UPDATE orders
+     SET offered_price_kzt = $2, counter_price_kzt = NULL, price_status = 'offered'
+     WHERE id = $1 AND status <> 'delivered'
+     RETURNING id`,
+    [orderId, Math.round(priceKzt)],
+  );
+  return rows.length > 0;
+}
+
+/** The shipper declines the counter and stands by their own price. */
+export async function declineCounter(orderId: string): Promise<boolean> {
+  const db = getDb();
+  const rows = await db.query<{ id: string }>(
+    `UPDATE orders SET counter_price_kzt = NULL, price_status = 'offered'
+     WHERE id = $1 AND counter_price_kzt IS NOT NULL
+     RETURNING id`,
+    [orderId],
+  );
+  return rows.length > 0;
+}
