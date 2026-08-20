@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Alert, Badge, Surface, buttonClass } from "./ui";
 import type { ParsedOrder } from "@/lib/ai/parse-order";
-import { weight, when } from "@/lib/format";
+import { ASSUMPTIONS } from "@/lib/engine/economics";
+import { kzt, weight, when } from "@/lib/format";
 
 interface SettlementOption {
   id: string;
@@ -35,8 +36,31 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
   const [text, setText] = useState("");
   const [draft, setDraft] = useState<ParsedOrder | null>(null);
   const [shipper, setShipper] = useState("");
+  const [phone, setPhone] = useState("");
+  const [price, setPrice] = useState("");
+  const [floor, setFloor] = useState<PriceFloor | null>(null);
   const [phase, setPhase] = useState<"idle" | "parsing" | "saving" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  const origin = draft?.origin_id ?? null;
+  const destination = draft?.destination_id ?? null;
+  const weightKg = draft?.weight_kg ?? null;
+
+  useEffect(() => {
+    if (!origin || !destination || !weightKg) {
+      setFloor(null);
+      return;
+    }
+    const controller = new AbortController();
+    const query = `origin=${origin}&destination=${destination}&weight=${weightKg}`;
+    fetch(`/api/price?${query}`, { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => setFloor(data))
+      .catch(() => {
+        /* Aborted or offline: the field simply shows no recommendation. */
+      });
+    return () => controller.abort();
+  }, [origin, destination, weightKg]);
 
   async function parse() {
     setPhase("parsing");
@@ -65,7 +89,13 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...draft, shipper_name: shipper || "Отправитель", raw_text: text }),
+        body: JSON.stringify({
+          ...draft,
+          shipper_name: shipper || "Отправитель",
+          shipper_phone: phone.trim() || null,
+          offered_price_kzt: Number(price.replace(/\s/g, "")) || null,
+          raw_text: text,
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Не удалось разместить заявку");
@@ -75,6 +105,8 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
 
       setText("");
       setDraft(null);
+      setPhone("");
+      setPrice("");
       setPhase("done");
       router.refresh();
       setTimeout(() => setPhase("idle"), 4000);
@@ -219,13 +251,72 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
               </ul>
             ) : null}
 
-            <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center">
-              <input
-                value={shipper}
-                onChange={(event) => setShipper(event.target.value)}
-                placeholder="Кто отправляет, например «Магазин Береке»"
-                className={`${INPUT} flex-1`}
-              />
+            <div className="mt-3.5 rounded-control border border-brand-border/60 bg-brand-soft p-3.5">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <label className="min-w-0 flex-1">
+                  <span className="text-caption uppercase text-brand">Сколько вы платите</span>
+                  <span className="mt-1.5 flex items-center gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={price}
+                      onChange={(event) => setPrice(event.target.value.replace(/[^\d\s]/g, ""))}
+                      placeholder={floor ? String(floor.price_kzt) : "20000"}
+                      className={`${INPUT} tnum max-w-[11rem] text-[1.0625rem] font-semibold`}
+                    />
+                    <span className="text-body text-ink-600">₸</span>
+                    {floor ? (
+                      <button
+                        onClick={() => setPrice(String(floor.price_kzt))}
+                        className="rounded-pill border border-brand-border bg-white px-2.5 py-1 text-[0.6875rem] font-medium text-brand transition hover:bg-brand-soft"
+                      >
+                        поставить {kzt(floor.price_kzt)}
+                      </button>
+                    ) : null}
+                  </span>
+                </label>
+              </div>
+
+              {floor ? (
+                <p className="mt-2.5 text-small text-ink-600">
+                  Рекомендуем от <span className="tnum font-semibold text-ink-900">{kzt(floor.price_kzt)}</span>{" "}
+                  — это себестоимость плеча {Math.round(floor.km)} км: топливо{" "}
+                  {floor.fuel_l.toFixed(0)} л × {ASSUMPTIONS.dieselPriceKztPerL} ₸ ÷ {ASSUMPTIONS.fuelShareOfOperatingCost}, с учётом того,
+                  что груз занимает {Math.round(floor.charged_share * 100)}% кузова. Ниже этой суммы
+                  перевозчик едет в убыток. Цену ставите вы — перевозчик может согласиться или
+                  предложить свою.
+                </p>
+              ) : (
+                <p className="mt-2.5 text-small text-ink-600">
+                  Укажите маршрут и вес — покажем рекомендованный минимум.
+                </p>
+              )}
+            </div>
+
+            <div className="mt-3.5 grid gap-3 sm:grid-cols-2">
+              <Field label="Кто отправляет">
+                <input
+                  value={shipper}
+                  onChange={(event) => setShipper(event.target.value)}
+                  placeholder="например «Магазин Береке»"
+                  className={INPUT}
+                />
+              </Field>
+              <Field label="Телефон для водителя">
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  placeholder="+7 701 000 00 00"
+                  className={`${INPUT} tnum`}
+                />
+              </Field>
+            </div>
+            <p className="mt-2 text-small text-ink-500">
+              Водитель звонит по этому номеру перед выездом — уточнить подъезд и кто встречает.
+            </p>
+
+            <div className="mt-3.5 flex flex-col gap-2.5 sm:flex-row sm:items-center">
               <button
                 onClick={place}
                 disabled={phase === "saving" || !complete}
@@ -248,6 +339,13 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
       </div>
     </Surface>
   );
+}
+
+interface PriceFloor {
+  km: number;
+  price_kzt: number;
+  fuel_l: number;
+  charged_share: number;
 }
 
 const INPUT =

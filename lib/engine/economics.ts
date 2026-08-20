@@ -81,9 +81,79 @@ export const ASSUMPTIONS = {
     "дорожным расстояниям, доля топлива в затратах перевозчика — заявленное допущение. " +
     "Это ориентир для начала разговора, а не тариф: стороны договариваются сами.",
 
+  minChargedShareNote:
+    "Рекомендованный минимум = топливо на груженое плечо ÷ 0.38, умноженное на долю " +
+    "кузова под грузом (не меньше 30%: маленькая партия не стоит десятую часть фуры). " +
+    "Это пол, а не тариф — цену в заявке пишет сам заказчик.",
+
   distanceSource: "OSRM на дорожной сети OpenStreetMap, 2080 пар, все по дорогам",
   settlementSource: "OpenStreetMap, 65 населённых пунктов Мангистауской области, ODbL",
 } as const;
+
+/**
+ * Reference truck classes for pricing, mirroring the fleet in lib/seed.ts.
+ *
+ * Pricing needs a truck before a truck is assigned, so the recommendation uses
+ * the smallest class that can carry the consignment. A larger truck actually
+ * showing up does not change what the shipper was quoted.
+ */
+const PRICING_CLASSES: readonly { capacity_kg: number; fuel_per_100km: number }[] = [
+  { capacity_kg: 3000, fuel_per_100km: 14 },
+  { capacity_kg: 5000, fuel_per_100km: 18 },
+  { capacity_kg: 10000, fuel_per_100km: 22 },
+  { capacity_kg: 15000, fuel_per_100km: 28 },
+];
+
+/**
+ * The smallest share of a truck a consignment is charged for.
+ *
+ * A 300 kg pallet does not cost a tenth of a lorry: someone still drives the
+ * route, and the truck cannot be filled with thirty separate pallets. Charging
+ * a floor share is what keeps a recommendation for small cargo believable —
+ * and small cargo to the villages is the case the brief is about.
+ */
+const MIN_CHARGED_SHARE = 0.3;
+
+export interface PriceRecommendation {
+  /** The floor, in tenge, rounded to 500. */
+  price_kzt: number;
+  /** Litres the loaded leg burns — what the number is built from. */
+  fuel_l: number;
+  /** Truck class the recommendation assumes. */
+  capacity_kg: number;
+  /** Share of the truck this consignment is charged for. */
+  charged_share: number;
+}
+
+/**
+ * What a shipper should expect to pay, at minimum, for one consignment.
+ *
+ * Deliberately a floor and not a price: the platform does not know Mangystau's
+ * freight rates and does not invent them. What it can compute from real data is
+ * the cost of driving the loaded leg — fuel over real road distance — scaled by
+ * the share of a carrier's costs that fuel represents. Below this figure the
+ * carrier drives at a loss. Above it, the two sides negotiate, exactly as they
+ * do on the phone today; the shipper types the number.
+ */
+export function recommendedOrderPriceKzt(km: number, weightKg: number): PriceRecommendation {
+  const cls =
+    PRICING_CLASSES.find((c) => c.capacity_kg >= weightKg) ??
+    PRICING_CLASSES[PRICING_CLASSES.length - 1]!;
+
+  // Cost of dedicating the truck to this leg, fully loaded.
+  const per100Laden = cls.fuel_per_100km * (1 + ASSUMPTIONS.ladenSurchargeAtFullLoad);
+  const fullLegLitres = (km * per100Laden) / 100;
+  const fullLegCost = (fullLegLitres * ASSUMPTIONS.dieselPriceKztPerL) / ASSUMPTIONS.fuelShareOfOperatingCost;
+
+  const share = Math.min(1, Math.max(MIN_CHARGED_SHARE, weightKg / cls.capacity_kg));
+
+  return {
+    price_kzt: Math.max(2000, Math.round((fullLegCost * share) / 500) * 500),
+    fuel_l: round1(fullLegLitres * share),
+    capacity_kg: cls.capacity_kg,
+    charged_share: round3(share),
+  };
+}
 
 /**
  * An indicative price for a trip, derived from its fuel cost.

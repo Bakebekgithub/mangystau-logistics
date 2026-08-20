@@ -9,7 +9,8 @@
 
 import { getDb } from "./db.ts";
 import { loadContext, proposeAcrossFleet } from "./dispatch.ts";
-import type { TripPlan } from "./types.ts";
+import { baselineForOrders, evaluateRoute, savingsAgainstBaseline } from "./engine/economics.ts";
+import type { Order, TripPlan, TripStop, Vehicle } from "./types.ts";
 
 function newId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
@@ -219,4 +220,132 @@ export async function completeStop(stopId: string): Promise<{ trip_completed: bo
 
 function round1(x: number): number {
   return Math.round(x * 10) / 10;
+}
+
+/**
+ * A carrier drops one consignment from a trip and keeps the rest.
+ *
+ * The route is genuinely re-walked afterwards rather than having its numbers
+ * adjusted: removing a stop changes the order of everything after it, which
+ * changes distance, fuel and the empty share. A card that kept the old figures
+ * would be lying about the trip the driver is actually about to drive.
+ *
+ * The dropped order goes back into the pool, so the next planning cycle can
+ * offer it to someone else.
+ */
+export async function dropOrderFromTrip(
+  tripId: string,
+  orderId: string,
+): Promise<{ removed: true; trip_deleted: boolean } | null> {
+  const db = getDb();
+
+  const [trip] = await db.query<{ id: string; status: string; vehicle_id: string }>(
+    `SELECT id, status, vehicle_id FROM trips WHERE id = $1`,
+    [tripId],
+  );
+  // Once a driver is rolling, dropping cargo is a phone call, not a button.
+  if (!trip || (trip.status !== "proposed" && trip.status !== "accepted")) return null;
+
+  const stops = await db.query<{ id: string; seq: number; settlement_id: string; action: "pickup" | "dropoff"; order_id: string }>(
+    `SELECT id, seq, settlement_id, action, order_id FROM trip_stops
+     WHERE trip_id = $1 ORDER BY seq`,
+    [tripId],
+  );
+  if (!stops.some((s) => s.order_id === orderId)) return null;
+
+  await db.query(`DELETE FROM trip_stops WHERE trip_id = $1 AND order_id = $2`, [tripId, orderId]);
+  await db.query(
+    `UPDATE orders SET status = 'new' WHERE id = $1 AND status <> 'delivered'`,
+    [orderId],
+  );
+
+  const remaining = stops.filter((s) => s.order_id !== orderId);
+  if (remaining.length === 0) {
+    await db.query(`DELETE FROM trips WHERE id = $1`, [tripId]);
+    return { removed: true, trip_deleted: true };
+  }
+
+  // Resequence so the stops stay 1..n and the timeline reads correctly.
+  const resequenced: TripStop[] = remaining.map((stop, index) => ({
+    seq: index + 1,
+    settlement_id: stop.settlement_id,
+    action: stop.action,
+    order_id: stop.order_id,
+  }));
+  for (const [index, stop] of remaining.entries()) {
+    await db.query(`UPDATE trip_stops SET seq = $1 WHERE id = $2`, [index + 1, stop.id]);
+  }
+
+  const [vehicle] = await db.query<Vehicle>(
+    `SELECT id, carrier_id, plate, kind, capacity_kg, fuel_per_100km, at_id
+     FROM vehicles WHERE id = $1`,
+    [trip.vehicle_id],
+  );
+  const orderRows = await db.query<Order>(
+    `SELECT id, shipper_name, origin_id, destination_id, cargo, weight_kg, needs_cooling,
+            ready_at, deadline_at, status
+     FROM orders WHERE id = ANY($1::text[])`,
+    [[...new Set(resequenced.map((s) => s.order_id))]],
+  );
+  const orders = new Map(
+    orderRows.map((o) => [o.id, { ...o, weight_kg: Number(o.weight_kg) }] as const),
+  );
+  const typedVehicle: Vehicle = {
+    ...vehicle,
+    capacity_kg: Number(vehicle.capacity_kg),
+    fuel_per_100km: Number(vehicle.fuel_per_100km),
+  };
+
+  const { dist } = await loadContext();
+  const route = evaluateRoute(typedVehicle, resequenced, orders, dist);
+  const baseline = baselineForOrders([...orders.values()], typedVehicle, dist);
+  const savings = savingsAgainstBaseline(route, baseline);
+
+  await db.query(
+    `UPDATE trips SET total_km = $2, laden_km = $3, empty_km = $4,
+            baseline_total_km = $5, baseline_empty_km = $6,
+            fuel_l = $7, fuel_saved_l = $8, money_saved_kzt = $9,
+            paid_km_share = $10, minutes = $11
+     WHERE id = $1`,
+    [
+      tripId,
+      route.total_km,
+      route.laden_km,
+      route.empty_km,
+      baseline.total_km,
+      baseline.empty_km,
+      route.fuel_l,
+      savings.fuel_saved_l,
+      savings.money_saved_kzt,
+      route.paid_km_share,
+      route.minutes,
+    ],
+  );
+
+  return { removed: true, trip_deleted: false };
+}
+
+/** A carrier names their own figure. The shipper sees it and answers. */
+export async function counterOffer(orderId: string, priceKzt: number): Promise<boolean> {
+  const db = getDb();
+  const rows = await db.query<{ id: string }>(
+    `UPDATE orders SET counter_price_kzt = $2, price_status = 'countered'
+     WHERE id = $1 AND status <> 'delivered'
+     RETURNING id`,
+    [orderId, Math.round(priceKzt)],
+  );
+  return rows.length > 0;
+}
+
+/** The shipper accepts the counter, and it becomes the agreed price. */
+export async function acceptCounter(orderId: string): Promise<boolean> {
+  const db = getDb();
+  const rows = await db.query<{ id: string }>(
+    `UPDATE orders
+     SET offered_price_kzt = counter_price_kzt, counter_price_kzt = NULL, price_status = 'agreed'
+     WHERE id = $1 AND counter_price_kzt IS NOT NULL
+     RETURNING id`,
+    [orderId],
+  );
+  return rows.length > 0;
 }

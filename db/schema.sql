@@ -67,6 +67,9 @@ CREATE INDEX vehicles_at_idx ON vehicles (at_id);
 CREATE TABLE orders (
   id             text PRIMARY KEY,
   shipper_name   text NOT NULL,
+  -- Freight does not move without a phone call. Optional, because a shipper may
+  -- place an order before deciding who answers it.
+  shipper_phone  text,
   origin_id      text NOT NULL REFERENCES settlements(id),
   destination_id text NOT NULL REFERENCES settlements(id),
   cargo          text NOT NULL,
@@ -74,6 +77,17 @@ CREATE TABLE orders (
   needs_cooling  boolean NOT NULL DEFAULT false,
   ready_at       timestamptz NOT NULL,
   deadline_at    timestamptz NOT NULL,
+
+  -- What the shipper offers to pay. The platform recommends a floor computed
+  -- from fuel over real road distance; the figure itself is the shipper's,
+  -- because the region's freight rates are not ours to invent.
+  offered_price_kzt integer CHECK (offered_price_kzt IS NULL OR offered_price_kzt > 0),
+  -- A carrier's counter-offer, awaiting the shipper's answer. Haggling is how
+  -- this market actually clears, so it is in the model rather than in a chat.
+  counter_price_kzt integer CHECK (counter_price_kzt IS NULL OR counter_price_kzt > 0),
+  price_status   text NOT NULL DEFAULT 'offered'
+                 CHECK (price_status IN ('offered', 'countered', 'agreed')),
+
   status         text NOT NULL DEFAULT 'new'
                  CHECK (status IN ('new', 'matched', 'in_transit', 'delivered', 'expired')),
   -- The message the shipper actually typed, kept so the parse can be shown and

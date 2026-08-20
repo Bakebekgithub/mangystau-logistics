@@ -22,6 +22,10 @@ export interface OrderView {
   needs_cooling: boolean;
   ready_at: string;
   deadline_at: string;
+  /** What the shipper offers, and any counter from a carrier. */
+  offered_price_kzt: number | null;
+  counter_price_kzt: number | null;
+  price_status: "offered" | "countered" | "agreed";
   status: OrderStatus;
   raw_text: string | null;
   parsed_by: string | null;
@@ -29,6 +33,8 @@ export interface OrderView {
   /** Who is carrying it, once a driver has taken the trip. */
   carrier_name?: string | null;
   carrier_plate?: string | null;
+  /** So the shipper can ring the driver rather than wait to be rung. */
+  carrier_phone?: string | null;
   trip_id?: string | null;
   /** Status of the trip this order sits in, including a not-yet-accepted one. */
   trip_status?: string | null;
@@ -40,7 +46,7 @@ export interface OrderView {
  */
 const CARRIER_JOIN = `
   LEFT JOIN LATERAL (
-    SELECT c.name AS carrier_name, v.plate AS carrier_plate,
+    SELECT c.name AS carrier_name, v.plate AS carrier_plate, c.phone AS carrier_phone,
            tr.id AS trip_id, tr.status AS trip_status
     FROM trip_stops ts
     JOIN trips tr ON tr.id = ts.trip_id AND tr.status <> 'declined'
@@ -59,6 +65,7 @@ export async function listOrders(status?: OrderStatus, limit = 200): Promise<Ord
             o.origin_id, so.name_ru AS origin_name,
             o.destination_id, sd.name_ru AS destination_name, sd.place AS destination_place,
             o.cargo, o.weight_kg, o.needs_cooling, o.ready_at, o.deadline_at,
+            o.offered_price_kzt, o.counter_price_kzt, o.price_status,
             o.status, o.raw_text, o.parsed_by,
             d.km
      FROM orders o
@@ -70,7 +77,7 @@ export async function listOrders(status?: OrderStatus, limit = 200): Promise<Ord
      LIMIT ${limit}`,
     status ? [status] : [],
   );
-  return rows.map((r) => ({ ...r, weight_kg: Number(r.weight_kg), km: r.km === null ? null : Number(r.km) }));
+  return rows.map(numberiseOrder);
 }
 
 /**
@@ -86,9 +93,11 @@ export async function listTypedOrders(limit = 25): Promise<OrderView[]> {
             o.origin_id, so.name_ru AS origin_name,
             o.destination_id, sd.name_ru AS destination_name, sd.place AS destination_place,
             o.cargo, o.weight_kg, o.needs_cooling, o.ready_at, o.deadline_at,
+            o.offered_price_kzt, o.counter_price_kzt, o.price_status,
             o.status, o.raw_text, o.parsed_by,
             d.km,
-            carrier.carrier_name, carrier.carrier_plate, carrier.trip_id, carrier.trip_status
+            carrier.carrier_name, carrier.carrier_plate, carrier.carrier_phone,
+            carrier.trip_id, carrier.trip_status
      FROM orders o
      JOIN settlements so ON so.id = o.origin_id
      JOIN settlements sd ON sd.id = o.destination_id
@@ -98,7 +107,7 @@ export async function listTypedOrders(limit = 25): Promise<OrderView[]> {
      ORDER BY o.created_at DESC
      LIMIT ${limit}`,
   );
-  return rows.map((r) => ({ ...r, weight_kg: Number(r.weight_kg), km: r.km === null ? null : Number(r.km) }));
+  return rows.map(numberiseOrder);
 }
 
 /**
@@ -114,6 +123,7 @@ export async function listUnplannedOrders(): Promise<OrderView[]> {
             o.origin_id, so.name_ru AS origin_name,
             o.destination_id, sd.name_ru AS destination_name, sd.place AS destination_place,
             o.cargo, o.weight_kg, o.needs_cooling, o.ready_at, o.deadline_at,
+            o.offered_price_kzt, o.counter_price_kzt, o.price_status,
             o.status, o.raw_text, o.parsed_by,
             d.km
      FROM orders o
@@ -129,7 +139,18 @@ export async function listUnplannedOrders(): Promise<OrderView[]> {
      ORDER BY o.created_at DESC
      LIMIT 12`,
   );
-  return rows.map((r) => ({ ...r, weight_kg: Number(r.weight_kg), km: r.km === null ? null : Number(r.km) }));
+  return rows.map(numberiseOrder);
+}
+
+/** Postgres returns numerics as strings; screens expect numbers. */
+function numberiseOrder(row: OrderView): OrderView {
+  return {
+    ...row,
+    weight_kg: Number(row.weight_kg),
+    km: row.km === null ? null : Number(row.km),
+    offered_price_kzt: row.offered_price_kzt === null ? null : Number(row.offered_price_kzt),
+    counter_price_kzt: row.counter_price_kzt === null ? null : Number(row.counter_price_kzt),
+  };
 }
 
 export interface TripStopView {
@@ -144,6 +165,12 @@ export interface TripStopView {
   cargo: string | null;
   weight_kg: number | null;
   shipper_name: string | null;
+  /** The number the driver calls before setting off. */
+  shipper_phone: string | null;
+  /** Price attached to this consignment, so the driver sees what each leg pays. */
+  offered_price_kzt: number | null;
+  counter_price_kzt: number | null;
+  price_status: "offered" | "countered" | "agreed" | null;
   done_at: string | null;
   /** Placed by a person rather than the demand generator. */
   is_typed: boolean;
@@ -170,6 +197,11 @@ export interface TripView {
   paid_km_share: number;
   minutes: number;
   explanation: string;
+  /**
+   * What this trip pays: the sum of what the shippers aboard offered. Real
+   * money from real offers — the engine puts no tariff on anything.
+   */
+  revenue_kzt: number;
   accepted_at: string | null;
   at_lat: number;
   at_lon: number;
@@ -191,6 +223,12 @@ export async function listTrips(status?: TripView["status"]): Promise<TripView[]
             t.total_km, t.laden_km, t.empty_km, t.baseline_total_km, t.baseline_empty_km,
             t.fuel_l, t.fuel_saved_l, t.money_saved_kzt, t.paid_km_share, t.minutes,
             t.explanation, t.accepted_at,
+            COALESCE((
+              SELECT sum(o.offered_price_kzt)
+              FROM trip_stops ts
+              JOIN orders o ON o.id = ts.order_id
+              WHERE ts.trip_id = t.id AND ts.action = 'pickup'
+            ), 0) AS revenue_kzt,
             EXISTS (
               SELECT 1 FROM trip_stops ts
               JOIN orders o ON o.id = ts.order_id
@@ -210,7 +248,9 @@ export async function listTrips(status?: TripView["status"]): Promise<TripView[]
 
   const stops = await db.query<TripStopView & { trip_id: string }>(
     `SELECT ts.id, ts.trip_id, ts.seq, ts.settlement_id, s.name_ru AS settlement_name,
-            s.lat, s.lon, ts.action, ts.order_id, o.cargo, o.weight_kg, o.shipper_name, ts.done_at,
+            s.lat, s.lon, ts.action, ts.order_id, o.cargo, o.weight_kg,
+            o.shipper_name, o.shipper_phone,
+            o.offered_price_kzt, o.counter_price_kzt, o.price_status, ts.done_at,
             (o.raw_text IS NOT NULL) AS is_typed
      FROM trip_stops ts
      JOIN settlements s ON s.id = ts.settlement_id

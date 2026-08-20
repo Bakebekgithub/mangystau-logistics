@@ -37,6 +37,8 @@ export async function POST(request: Request) {
   try {
     const order = await createOrder({
       shipper_name: String(draft.shipper_name ?? "Отправитель"),
+      shipper_phone: draft.shipper_phone ? String(draft.shipper_phone).slice(0, 32) : null,
+      offered_price_kzt: draft.offered_price_kzt ? Number(draft.offered_price_kzt) : null,
       origin_id: String(draft.origin_id),
       destination_id: String(draft.destination_id),
       cargo: String(draft.cargo),

@@ -1,6 +1,7 @@
+import { CounterOffer } from "@/components/CounterOffer";
 import { OrderComposer } from "@/components/OrderComposer";
 import { Badge, EmptyState, Metric, SectionHead, Surface, TopBar } from "@/components/ui";
-import { km, weight, when } from "@/lib/format";
+import { km, kzt, weight, when } from "@/lib/format";
 import { listSettlements, listTypedOrders, type OrderView } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -94,6 +95,21 @@ export default async function ShipperPage() {
                       {order.parsed_by === "ai" ? "разобрано ИИ" : "разобрано по словарю"}
                     </div>
 
+                    {order.offered_price_kzt ? (
+                      <div className="mt-2.5 flex items-baseline gap-2 text-small">
+                        <span className="text-ink-500">
+                          {order.price_status === "agreed" ? "Согласовано:" : "Ваша цена:"}
+                        </span>
+                        <span className="tnum font-semibold text-ink-900">
+                          {kzt(order.offered_price_kzt)}
+                        </span>
+                      </div>
+                    ) : null}
+
+                    {order.price_status === "countered" && order.counter_price_kzt ? (
+                      <CounterOffer orderId={order.id} price={order.counter_price_kzt} />
+                    ) : null}
+
                     {order.carrier_plate && order.trip_status === "proposed" ? (
                       <div className="mt-3 flex items-center gap-2.5 rounded-control border border-brand-border bg-brand-soft px-3 py-2.5">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[0.6875rem] font-bold text-brand">
@@ -115,7 +131,7 @@ export default async function ShipperPage() {
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[0.6875rem] font-bold text-laden-ink">
                           {order.carrier_plate.slice(0, 3)}
                         </span>
-                        <span className="min-w-0 text-small">
+                        <span className="min-w-0 flex-1 text-small">
                           <span className="block font-medium text-ink-900">
                             {order.carrier_name}
                           </span>
@@ -126,8 +142,20 @@ export default async function ShipperPage() {
                               : order.status === "delivered"
                                 ? "доставлено"
                                 : "принял заявку"}
+                            {order.carrier_phone ? (
+                              <span className="tnum"> · {order.carrier_phone}</span>
+                            ) : null}
                           </span>
                         </span>
+                        {/* The number opens once a carrier has committed, not before. */}
+                        {order.carrier_phone ? (
+                          <a
+                            href={`tel:${order.carrier_phone.replace(/[^+\d]/g, "")}`}
+                            className="tnum shrink-0 rounded-control border border-laden-border bg-white px-3 py-1.5 text-small font-medium text-laden-ink transition hover:border-laden"
+                          >
+                            Позвонить
+                          </a>
+                        ) : null}
                       </div>
                     ) : null}
 

@@ -37,6 +37,7 @@ export type OrderStatus = "new" | "matched" | "in_transit" | "delivered" | "expi
 export interface Order {
   id: string;
   shipper_name: string;
+  shipper_phone?: string | null;
   origin_id: string;
   destination_id: string;
   cargo: string;
@@ -44,6 +45,10 @@ export interface Order {
   needs_cooling: boolean;
   ready_at: string;
   deadline_at: string;
+  /** What the shipper offers, in tenge. Set by the shipper, not the engine. */
+  offered_price_kzt?: number | null;
+  counter_price_kzt?: number | null;
+  price_status?: "offered" | "countered" | "agreed";
   status: OrderStatus;
   raw_text?: string | null;
   parsed_by?: "ai" | "rules" | "seed" | null;

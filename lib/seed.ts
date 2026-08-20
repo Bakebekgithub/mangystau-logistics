@@ -25,6 +25,7 @@
  * and stage is a pitch that goes wrong.
  */
 
+import { recommendedOrderPriceKzt } from "./engine/economics.ts";
 import type { Carrier, Order, PlaceKind, Settlement, Vehicle, VehicleKind } from "./types.ts";
 
 /** Deterministic PRNG (mulberry32). Same seed, same region, every run. */
@@ -141,6 +142,13 @@ function shipmentWeightRange(place: PlaceKind, population: number | null): [numb
   return [150, 900];
 }
 
+/** A modelled shipper's asking price: the floor, scaled by their disposition. */
+function offeredPrice(rng: Rng, km: number | null, weightKg: number): number | null {
+  if (km === null) return null;
+  const floor = recommendedOrderPriceKzt(km, weightKg).price_kzt;
+  return Math.round((floor * between(rng, 0.85, 1.5)) / 500) * 500;
+}
+
 export interface SeedResult {
   carriers: Carrier[];
   vehicles: Vehicle[];
@@ -153,6 +161,14 @@ export interface SeedConfig {
   carrierCount: number;
   /** Reference moment; ready and deadline times are placed around it. */
   now: Date;
+  /**
+   * Road distance lookup, used to put a price on each generated order.
+   *
+   * Optional: without it orders carry no price, which is a valid state — a
+   * shipper can post a load and invite offers. With it, the modelled shippers
+   * behave like real ones, offering somewhere either side of the floor.
+   */
+  kmOf?: (from: string, to: string) => number | null;
 }
 
 export const DEFAULT_SEED_CONFIG: Omit<SeedConfig, "now"> = {
@@ -266,6 +282,7 @@ export function generateSeed(settlements: Settlement[], config: SeedConfig): See
     orders.push({
       id: `order-${i + 1}`,
       shipper_name: shipperName(rng, origin),
+      shipper_phone: `+7 7${intBetween(rng, 10, 79)} ${intBetween(rng, 100, 999)} ${intBetween(rng, 10, 99)} ${intBetween(rng, 10, 99)}`,
       origin_id: origin.id,
       destination_id: destination.id,
       cargo: item.cargo,
@@ -275,6 +292,11 @@ export function generateSeed(settlements: Settlement[], config: SeedConfig): See
       needs_cooling: item.cooling && rng() < 0.6,
       ready_at: ready.toISOString(),
       deadline_at: deadline.toISOString(),
+      // Modelled shippers offer between 0.85 and 1.5 of the recommended floor:
+      // some are optimistic, some pay for speed. That spread is what gives the
+      // carrier something to choose between, and the haggling its point.
+      offered_price_kzt: offeredPrice(rng, config.kmOf?.(origin.id, destination.id) ?? null, Math.max(50, weight)),
+      price_status: "offered",
       status: "new",
       parsed_by: "seed",
       raw_text: null,

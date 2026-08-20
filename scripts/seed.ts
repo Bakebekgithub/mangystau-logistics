@@ -91,9 +91,16 @@ async function main() {
   console.log(`  distances: ${distanceRows.length} directed rows`);
   await insertBatched("distances", ["from_id", "to_id", "km", "minutes", "source"], distanceRows);
 
+  const kmByPair = new Map<string, number>();
+  for (const pair of matrixFile.pairs) {
+    kmByPair.set(`${pair.from}|${pair.to}`, pair.km);
+    kmByPair.set(`${pair.to}|${pair.from}`, pair.km);
+  }
+
   const { carriers, vehicles, orders } = generateSeed(settlements, {
     ...DEFAULT_SEED_CONFIG,
     now: new Date("2026-08-19T06:00:00Z"),
+    kmOf: (from, to) => kmByPair.get(`${from}|${to}`) ?? null,
   });
 
   console.log(`  carriers: ${carriers.length}, vehicles: ${vehicles.length}, orders: ${orders.length}`);
@@ -110,12 +117,14 @@ async function main() {
   await insertBatched(
     "orders",
     [
-      "id", "shipper_name", "origin_id", "destination_id", "cargo", "weight_kg",
-      "needs_cooling", "ready_at", "deadline_at", "status", "raw_text", "parsed_by",
+      "id", "shipper_name", "shipper_phone", "origin_id", "destination_id", "cargo", "weight_kg",
+      "needs_cooling", "ready_at", "deadline_at", "offered_price_kzt", "price_status",
+      "status", "raw_text", "parsed_by",
     ],
     orders.map((o) => [
-      o.id, o.shipper_name, o.origin_id, o.destination_id, o.cargo, o.weight_kg,
-      o.needs_cooling, o.ready_at, o.deadline_at, o.status, o.raw_text ?? null, o.parsed_by ?? "seed",
+      o.id, o.shipper_name, o.shipper_phone ?? null, o.origin_id, o.destination_id, o.cargo, o.weight_kg,
+      o.needs_cooling, o.ready_at, o.deadline_at, o.offered_price_kzt ?? null, o.price_status ?? "offered",
+      o.status, o.raw_text ?? null, o.parsed_by ?? "seed",
     ]),
   );
 

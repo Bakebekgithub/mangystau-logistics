@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getDb } from "@/lib/db";
-import { invalidateContext } from "@/lib/dispatch";
+import { invalidateContext, loadContext } from "@/lib/dispatch";
 import { regenerateProposals } from "@/lib/planning";
 import { DEFAULT_SEED_CONFIG, generateSeed } from "@/lib/seed";
 import type { Settlement } from "@/lib/types";
@@ -34,9 +34,13 @@ export async function POST() {
     );
   }
 
+  // Distances are real reference data and survived the wipe, so the modelled
+  // shippers can be given prices on the same basis as a real one.
+  const context = await loadContext();
   const { carriers, vehicles, orders } = generateSeed(settlements, {
     ...DEFAULT_SEED_CONFIG,
     now: new Date(),
+    kmOf: (from, to) => (context.dist.has(from, to) ? context.dist.km(from, to) : null),
   });
 
   for (const carrier of carriers) {
@@ -54,11 +58,13 @@ export async function POST() {
   }
   for (const order of orders) {
     await db.query(
-      `INSERT INTO orders (id, shipper_name, origin_id, destination_id, cargo, weight_kg,
-                           needs_cooling, ready_at, deadline_at, status, parsed_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'new','seed')`,
-      [order.id, order.shipper_name, order.origin_id, order.destination_id, order.cargo,
-       order.weight_kg, order.needs_cooling, order.ready_at, order.deadline_at],
+      `INSERT INTO orders (id, shipper_name, shipper_phone, origin_id, destination_id, cargo,
+                           weight_kg, needs_cooling, ready_at, deadline_at,
+                           offered_price_kzt, price_status, status, parsed_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'offered','new','seed')`,
+      [order.id, order.shipper_name, order.shipper_phone ?? null, order.origin_id,
+       order.destination_id, order.cargo, order.weight_kg, order.needs_cooling,
+       order.ready_at, order.deadline_at, order.offered_price_kzt ?? null],
     );
   }
 

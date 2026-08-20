@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { MapPanel } from "./MapPanel";
@@ -9,6 +9,7 @@ import { Badge, EmptyState, LadenBar, Metric, RouteTimeline, Surface, buttonClas
 import type { OrderView, TripStopView, TripView } from "@/lib/queries";
 import { duration, km, kzt, litres, percent, routeSummary, vehicleLabel, weight } from "@/lib/format";
 import { ASSUMPTIONS } from "@/lib/engine/economics";
+import type { VehicleKind } from "@/lib/types";
 
 const KIND: Record<TripView["kind"], { label: string; tone: "laden" | "accent" | "neutral" }> = {
   backhaul: { label: "Обратная загрузка", tone: "laden" },
@@ -98,7 +99,12 @@ function useAction() {
     }
   }
 
-  return { run, busy: busy || pending, error };
+  return {
+    run,
+    busy: busy || pending,
+    error,
+    refresh: () => startTransition(() => router.refresh()),
+  };
 }
 
 export function DriverConsole({
@@ -115,10 +121,41 @@ export function DriverConsole({
   /** Indicative price per trip id, computed server-side from its fuel. */
   priceOf: Record<string, number>;
 }) {
+  const [profile, setProfile] = useState<VehicleProfile>(DEFAULT_PROFILE);
+
+  // Read the saved profile after mount rather than during render: the server has
+  // no localStorage, and a mismatch there is a hydration error.
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(PROFILE_KEY);
+      if (saved) setProfile({ ...DEFAULT_PROFILE, ...JSON.parse(saved) });
+    } catch {
+      /* Corrupt or unavailable storage: the default profile stands. */
+    }
+  }, []);
+
+  function changeProfile(next: VehicleProfile) {
+    setProfile(next);
+    try {
+      window.localStorage.setItem(PROFILE_KEY, JSON.stringify(next));
+    } catch {
+      /* Private mode. The filter still works for this session. */
+    }
+  }
+
+  // A trip was planned for a particular truck, so a truck at least that big can
+  // certainly run it. Chilled loads need a reefer and nothing else will do.
+  const fits = (trip: TripView) =>
+    trip.capacity_kg <= profile.capacity_kg &&
+    (trip.vehicle_kind !== "refrigerator" || profile.kind === "refrigerator");
+
+  const offers = proposed.filter(fits);
+  const hidden = proposed.length - offers.length;
+
   // Both lists are shown at once. Hiding the offers behind an active trip meant a
   // driver mid-route could not see what else was available, and an order placed
   // seconds earlier appeared nowhere at all.
-  const shown = [...active, ...proposed];
+  const shown = [...active, ...offers];
   const [selectedId, setSelectedId] = useState<string | null>(shown[0]?.id ?? null);
   const selected = shown.find((trip) => trip.id === selectedId) ?? shown[0] ?? null;
   const { run, busy, error } = useAction();
@@ -137,7 +174,8 @@ export function DriverConsole({
             <h1 className="text-h3 text-ink-900">Рейсы</h1>
             <p className="text-small text-ink-500">
               {active.length > 0 ? `${active.length} в работе · ` : ""}
-              {proposed.length} доступно
+              {offers.length} под вашу машину
+              {hidden > 0 ? ` · ${hidden} не подходит` : ""}
             </p>
           </div>
           <button onClick={() => run("/api/plan")} disabled={busy} className={buttonClass("secondary", "sm")}>
@@ -145,14 +183,18 @@ export function DriverConsole({
           </button>
         </div>
 
+        <ProfileBar profile={profile} onChange={changeProfile} />
+
         {error ? <div className="px-4 pt-3 text-small text-danger">{error}</div> : null}
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
           {unplanned.length > 0 ? <UnplannedStrip orders={unplanned} /> : null}
 
-          {active.length === 0 && proposed.length === 0 ? (
-            <EmptyState title="Рейсов пока нет">
-              Нажмите «Пересобрать» — движок пройдёт по пулу заявок и соберёт рейсы заново.
+          {active.length === 0 && offers.length === 0 ? (
+            <EmptyState title={hidden > 0 ? "Под вашу машину рейсов нет" : "Рейсов пока нет"}>
+              {hidden > 0
+                ? `${hidden} рейс${hidden === 1 ? "" : "а"} рассчитан${hidden === 1 ? "" : "ы"} на другой кузов. Поменяйте машину выше или нажмите «Пересобрать».`
+                : "Нажмите «Пересобрать» — движок пройдёт по пулу заявок и соберёт рейсы заново."}
             </EmptyState>
           ) : null}
 
@@ -160,17 +202,17 @@ export function DriverConsole({
             <>
               <div className="pt-1 text-caption uppercase text-ink-500">В работе</div>
               {active.map((trip) => (
-                <ActiveTripCard key={trip.id} trip={trip} price={priceOf[trip.id] ?? 0} />
+                <ActiveTripCard key={trip.id} trip={trip} />
               ))}
             </>
           ) : null}
 
-          {proposed.length > 0 ? (
+          {offers.length > 0 ? (
             <>
               <div className="pt-2 text-caption uppercase text-ink-500">
-                Доступные рейсы · {proposed.length}
+                Доступные рейсы · {offers.length}
               </div>
-              {proposed.map((trip) => (
+              {offers.map((trip) => (
                 <ProposalCard
                   key={trip.id}
                   trip={trip}
@@ -230,8 +272,9 @@ function ProposalCard({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const { run, busy, error } = useAction();
+  const { run, busy, error, refresh } = useAction();
   const orderCount = new Set(trip.stops.map((s) => s.order_id).filter(Boolean)).size;
+  const fuelCost = Math.round(trip.fuel_l * ASSUMPTIONS.dieselPriceKztPerL);
   const kind = KIND[trip.kind];
   const summary = routeSummary([trip.at_name, ...trip.stops.map((s) => s.settlement_name), trip.at_name]);
 
@@ -260,8 +303,8 @@ function ProposalCard({
         </div>
 
         <div className="mt-3.5 grid grid-cols-3 gap-3">
-          <Metric label="Заработок" value={kzt(price).replace(" ₸", "")} unit="₸" tone="accent" />
-          <Metric label="Грузов" value={orderCount} sub={duration(trip.minutes)} />
+          <Metric label="Платят" value={kzt(trip.revenue_kzt).replace(" ₸", "")} unit="₸" tone="accent" />
+          <Metric label="Топливо" value={kzt(fuelCost).replace(" ₸", "")} unit="₸" tone="empty" />
           <Metric
             label="Порожний"
             value={km(trip.empty_km).replace(" км", "")}
@@ -271,37 +314,12 @@ function ProposalCard({
         </div>
 
         <p className="mt-2 text-[0.6875rem] text-ink-500">
-          Ориентир: топливо {litres(trip.fuel_l)} × {ASSUMPTIONS.dieselPriceKztPerL} ₸ ÷{" "}
-          {ASSUMPTIONS.fuelShareOfOperatingCost} — итоговую цену стороны согласуют сами
+          {orderCount} груз{orderCount === 1 ? "" : orderCount < 5 ? "а" : "ов"} ·{" "}
+          {duration(trip.minutes)} · топливо {litres(trip.fuel_l)} × {ASSUMPTIONS.dieselPriceKztPerL} ₸.
+          Рекомендованный минимум платформы за такой рейс — {kzt(price)}.
         </p>
 
-        <ul className="mt-3 space-y-1.5 border-t border-ink-200 pt-3">
-          {trip.stops
-            .filter((stop) => stop.action === "pickup" && stop.cargo)
-            .map((stop) => {
-              const drop = trip.stops.find(
-                (other) => other.order_id === stop.order_id && other.action === "dropoff",
-              );
-              return (
-                <li key={stop.id} className="flex items-baseline justify-between gap-3 text-small">
-                  <span className="min-w-0 truncate">
-                    <span className={stop.is_typed ? "font-semibold text-brand" : "text-ink-700"}>
-                      {stop.cargo}
-                    </span>
-                    {stop.weight_kg ? (
-                      <span className="text-ink-500"> · {weight(stop.weight_kg)}</span>
-                    ) : null}
-                    {stop.is_typed ? (
-                      <span className="ml-1.5 rounded-pill bg-brand-soft px-1.5 py-0.5 text-[0.625rem] font-medium text-brand">
-                        ваша заявка
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="shrink-0 text-ink-500">→ {drop?.settlement_name ?? "—"}</span>
-                </li>
-              );
-            })}
-        </ul>
+        <CargoBreakdown trip={trip} onChanged={refresh} />
 
         <div className="mt-3.5">
           <LadenBar ladenKm={trip.laden_km} emptyKm={trip.empty_km} />
@@ -310,6 +328,10 @@ function ProposalCard({
         <p className="mt-3 rounded-control bg-ink-50 px-3 py-2.5 text-small text-ink-600">
           {trip.explanation}
         </p>
+
+        <p className="mt-2 text-[0.6875rem] text-ink-500">
+          Телефоны отправителей откроются, как только вы возьмёте рейс.
+        </p>
       </div>
 
       <button
@@ -317,15 +339,15 @@ function ProposalCard({
         disabled={busy}
         className={`mt-3.5 ${buttonClass("primary", "lg")}`}
       >
-        {busy ? "Беру рейс…" : `Взять рейс · ${kzt(price)}`}
+        {busy ? "Беру рейс…" : `Взять рейс · ${kzt(trip.revenue_kzt)}`}
       </button>
       {error ? <p className="mt-1.5 text-small text-danger">{error}</p> : null}
     </Surface>
   );
 }
 
-function ActiveTripCard({ trip, price }: { trip: TripView; price: number }) {
-  const { run, busy, error } = useAction();
+function ActiveTripCard({ trip }: { trip: TripView }) {
+  const { run, busy, error, refresh } = useAction();
   const next = trip.stops.find((stop) => !stop.done_at);
   const remaining = trip.stops.filter((stop) => !stop.done_at).length;
   const started = trip.status === "in_transit";
@@ -347,7 +369,7 @@ function ActiveTripCard({ trip, price }: { trip: TripView; price: number }) {
       </div>
 
       <div className="mt-3.5 grid grid-cols-3 gap-3">
-        <Metric label="Заработок" value={kzt(price).replace(" ₸", "")} unit="₸" tone="accent" />
+        <Metric label="Платят" value={kzt(trip.revenue_kzt).replace(" ₸", "")} unit="₸" tone="accent" />
         <Metric label="Оплачиваемых" value={percent(trip.paid_km_share)} tone="laden" />
         <Metric
           label="Осталось точек"
@@ -373,6 +395,11 @@ function ActiveTripCard({ trip, price }: { trip: TripView; price: number }) {
             {next.cargo ? ` ${next.cargo}` : ""}
             {next.weight_kg ? `, ${weight(next.weight_kg)}` : ""}
           </div>
+          {next.shipper_phone ? (
+            <a href={telHref(next.shipper_phone)} className={`mt-3 ${buttonClass("secondary", "md")} w-full`}>
+              Позвонить{next.shipper_name ? ` · ${next.shipper_name}` : ""} · {next.shipper_phone}
+            </a>
+          ) : null}
           <button
             onClick={() => run(`/api/stops/${next.id}/done`)}
             disabled={busy}
@@ -389,12 +416,278 @@ function ActiveTripCard({ trip, price }: { trip: TripView; price: number }) {
       )}
       {error ? <p className="mt-1.5 text-small text-danger">{error}</p> : null}
 
+      <CargoBreakdown trip={trip} onChanged={refresh} />
+
+      <Contacts trip={trip} />
+
       <div className="mt-4 border-t border-ink-200 pt-3.5">
         <RouteTimeline stops={stopsForTimeline(trip.stops)} origin={trip.at_name} />
       </div>
     </Surface>
   );
 }
+
+/** A phone number as a link the phone dials. Spaces break `tel:` on some dialers. */
+function telHref(phone: string): string {
+  return `tel:${phone.replace(/[^+\d]/g, "")}`;
+}
+
+/**
+ * Who to ring, per consignment.
+ *
+ * Only on an accepted trip: before a driver commits, they see the cargo and the
+ * route but not the shipper's number. Freight still moves on a phone call, so
+ * this is part of the working loop rather than a later "account" feature.
+ */
+function Contacts({ trip }: { trip: TripView }) {
+  const pickups = trip.stops.filter((stop) => stop.action === "pickup" && stop.shipper_name);
+  if (pickups.length === 0) return null;
+
+  return (
+    <div className="mt-4 border-t border-ink-200 pt-3.5">
+      <div className="text-caption uppercase text-ink-500">Контакты по грузам</div>
+      <ul className="mt-2 space-y-2">
+        {pickups.map((stop) => (
+          <li key={`contact-${stop.id}`} className="flex items-baseline justify-between gap-3 text-small">
+            <span className="min-w-0 truncate text-ink-700">
+              {stop.shipper_name}
+              <span className="text-ink-500"> · {stop.settlement_name}</span>
+            </span>
+            {stop.shipper_phone ? (
+              <a
+                href={telHref(stop.shipper_phone)}
+                className="tnum shrink-0 font-medium text-brand underline decoration-brand/30 underline-offset-2 hover:decoration-brand"
+              >
+                {stop.shipper_phone}
+              </a>
+            ) : (
+              <span className="shrink-0 text-ink-500">телефон не указан</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+
+/**
+ * What this trip is made of, leg by leg, with the money attached to each.
+ *
+ * A driver on the phone today knows exactly what he is carrying, from where to
+ * where, and for how much. A single trip total hides all three, so the card
+ * shows the same breakdown he would write on paper — and lets him refuse one
+ * consignment or name his own figure for it without losing the rest of the trip.
+ */
+function CargoBreakdown({ trip, onChanged }: { trip: TripView; onChanged: () => void }) {
+  const [editing, setEditing] = useState<string | null>(null);
+  const [bid, setBid] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const editable = trip.status === "proposed";
+
+  const pickups = trip.stops.filter((stop) => stop.action === "pickup" && stop.order_id);
+  if (pickups.length === 0) return null;
+
+  async function call(url: string, body?: unknown, orderId?: string) {
+    setBusyId(orderId ?? url);
+    setError(null);
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: body ? { "content-type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error ?? "Не получилось");
+      }
+      setEditing(null);
+      setBid("");
+      onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div className="mt-3 border-t border-ink-200 pt-3" onClick={(event) => event.stopPropagation()}>
+      <div className="flex items-baseline justify-between">
+        <span className="text-caption uppercase text-ink-500">Что и за сколько</span>
+        <span className="tnum text-caption text-ink-500">итого {kzt(trip.revenue_kzt)}</span>
+      </div>
+
+      <ul className="mt-2 space-y-2.5">
+        {pickups.map((stop) => {
+          const drop = trip.stops.find(
+            (other) => other.order_id === stop.order_id && other.action === "dropoff",
+          );
+          const busyHere = busyId === stop.order_id;
+          return (
+            <li key={`leg-${stop.id}`} className="rounded-control bg-ink-50 px-3 py-2.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="min-w-0 truncate text-small font-medium text-ink-900">
+                  {stop.settlement_name} → {drop?.settlement_name ?? "—"}
+                </span>
+                <span className="tnum shrink-0 text-small font-semibold text-ink-900">
+                  {stop.offered_price_kzt ? kzt(stop.offered_price_kzt) : "цена не указана"}
+                </span>
+              </div>
+
+              <div className="mt-0.5 flex items-baseline justify-between gap-3 text-[0.6875rem] text-ink-500">
+                <span className="min-w-0 truncate">
+                  <span className={stop.is_typed ? "font-semibold text-brand" : undefined}>
+                    {stop.cargo}
+                  </span>
+                  {stop.weight_kg ? ` · ${weight(stop.weight_kg)}` : ""}
+                  {stop.shipper_name ? ` · ${stop.shipper_name}` : ""}
+                </span>
+                {stop.is_typed ? (
+                  <span className="shrink-0 rounded-pill bg-brand-soft px-1.5 py-0.5 font-medium text-brand">
+                    ваша заявка
+                  </span>
+                ) : null}
+              </div>
+
+              {stop.price_status === "countered" && stop.counter_price_kzt ? (
+                <p className="tnum mt-1.5 text-[0.6875rem] text-warn">
+                  вы предложили {kzt(stop.counter_price_kzt)} — ждём ответа заказчика
+                </p>
+              ) : null}
+              {stop.price_status === "agreed" ? (
+                <p className="mt-1.5 text-[0.6875rem] text-laden-ink">цена согласована</p>
+              ) : null}
+
+              {editable && editing === stop.order_id ? (
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    autoFocus
+                    type="text"
+                    inputMode="numeric"
+                    value={bid}
+                    onChange={(event) => setBid(event.target.value.replace(/[^\d]/g, ""))}
+                    placeholder={String(stop.offered_price_kzt ?? "")}
+                    className="tnum w-28 rounded-control border border-ink-300 bg-white px-2.5 py-1.5 text-small text-ink-900 focus:border-brand-border focus:outline-none"
+                  />
+                  <span className="text-small text-ink-600">₸</span>
+                  <button
+                    disabled={busyHere || !bid}
+                    onClick={() => call(`/api/orders/${stop.order_id}/counter`, { price: Number(bid) }, stop.order_id!)}
+                    className={buttonClass("primary", "sm")}
+                  >
+                    {busyHere ? "…" : "Предложить"}
+                  </button>
+                  <button onClick={() => setEditing(null)} className={buttonClass("ghost", "sm")}>
+                    Отмена
+                  </button>
+                </div>
+              ) : editable ? (
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setEditing(stop.order_id);
+                      setBid(String(stop.offered_price_kzt ?? ""));
+                    }}
+                    className={buttonClass("secondary", "sm")}
+                  >
+                    Своя цена
+                  </button>
+                  <button
+                    disabled={busyHere}
+                    onClick={() =>
+                      call(`/api/trips/${trip.id}/orders/${stop.order_id}/remove`, undefined, stop.order_id!)
+                    }
+                    className="rounded-control px-2.5 py-1.5 text-small text-ink-600 transition hover:bg-white hover:text-danger"
+                  >
+                    {busyHere ? "…" : "Не беру"}
+                  </button>
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+
+      {error ? <p className="mt-2 text-small text-danger">{error}</p> : null}
+      {editable ? (
+        <p className="mt-2 text-[0.6875rem] text-ink-500">
+          Уберёте груз — маршрут и цифры пересчитаются, остальные грузы останутся за вами.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+
+/**
+ * The carrier's own truck.
+ *
+ * Offers were previously shown regardless of what the driver drives, which is
+ * wrong in the one way that matters: a Gazelle owner scrolling past ten-tonne
+ * loads concludes the product is not for him. Kept in the browser rather than in
+ * an account, because the MVP has no sign-in and this is a device preference.
+ */
+interface VehicleProfile {
+  kind: VehicleKind;
+  capacity_kg: number;
+}
+
+const PROFILE_KEY = "mangystau.vehicle-profile";
+const DEFAULT_PROFILE: VehicleProfile = { kind: "tent", capacity_kg: 10000 };
+
+const PROFILE_KINDS: readonly { value: VehicleKind; label: string }[] = [
+  { value: "tent", label: "Тент" },
+  { value: "refrigerator", label: "Рефрижератор" },
+  { value: "flatbed", label: "Бортовая" },
+  { value: "tipper", label: "Самосвал" },
+];
+
+const PROFILE_CAPACITIES = [3000, 5000, 10000, 15000] as const;
+
+function ProfileBar({
+  profile,
+  onChange,
+}: {
+  profile: VehicleProfile;
+  onChange: (next: VehicleProfile) => void;
+}) {
+  return (
+    <div className="border-b border-ink-200 bg-ink-50 px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span className="text-caption uppercase text-ink-500">Моя машина</span>
+        <select
+          value={profile.kind}
+          onChange={(event) => onChange({ ...profile, kind: event.target.value as VehicleKind })}
+          className={SELECT}
+        >
+          {PROFILE_KINDS.map((kind) => (
+            <option key={kind.value} value={kind.value}>
+              {kind.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={profile.capacity_kg}
+          onChange={(event) => onChange({ ...profile, capacity_kg: Number(event.target.value) })}
+          className={SELECT}
+        >
+          {PROFILE_CAPACITIES.map((capacity) => (
+            <option key={capacity} value={capacity}>
+              {capacity / 1000} т
+            </option>
+          ))}
+        </select>
+        <span className="text-[0.6875rem] text-ink-500">— показываем только то, что влезет</span>
+      </div>
+    </div>
+  );
+}
+
+const SELECT =
+  "rounded-control border border-ink-300 bg-white px-2.5 py-1.5 text-small text-ink-900 " +
+  "transition focus:border-brand-border focus:outline-none";
 
 /** Explains the two line styles, so the map is readable without a caption. */
 function MapLegend({ trip }: { trip: TripView }) {

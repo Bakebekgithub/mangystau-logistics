@@ -13,6 +13,7 @@ import type { Order } from "./types.ts";
 
 export interface DraftOrder {
   shipper_name: string;
+  shipper_phone?: string | null;
   origin_id: string;
   destination_id: string;
   cargo: string;
@@ -20,6 +21,7 @@ export interface DraftOrder {
   needs_cooling: boolean;
   ready_at: string;
   deadline_at: string;
+  offered_price_kzt?: number | null;
   raw_text?: string | null;
   parsed_by?: "ai" | "rules" | "seed" | null;
 }
@@ -77,14 +79,16 @@ export async function createOrder(draft: DraftOrder): Promise<Order> {
   const id = `order-${crypto.randomUUID().slice(0, 8)}`;
   const [created] = await db.query<Order>(
     `INSERT INTO orders (
-       id, shipper_name, origin_id, destination_id, cargo, weight_kg,
-       needs_cooling, ready_at, deadline_at, status, raw_text, parsed_by
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'new',$10,$11)
-     RETURNING id, shipper_name, origin_id, destination_id, cargo, weight_kg,
-               needs_cooling, ready_at, deadline_at, status, raw_text, parsed_by`,
+       id, shipper_name, shipper_phone, origin_id, destination_id, cargo, weight_kg,
+       needs_cooling, ready_at, deadline_at, offered_price_kzt, status, raw_text, parsed_by
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'new',$12,$13)
+     RETURNING id, shipper_name, shipper_phone, origin_id, destination_id, cargo, weight_kg,
+               needs_cooling, ready_at, deadline_at, offered_price_kzt, price_status,
+               status, raw_text, parsed_by`,
     [
       id,
       draft.shipper_name.trim() || "Отправитель",
+      draft.shipper_phone?.trim() || null,
       draft.origin_id,
       draft.destination_id,
       draft.cargo.trim(),
@@ -92,6 +96,7 @@ export async function createOrder(draft: DraftOrder): Promise<Order> {
       draft.needs_cooling,
       ready.toISOString(),
       deadline.toISOString(),
+      draft.offered_price_kzt && draft.offered_price_kzt > 0 ? Math.round(draft.offered_price_kzt) : null,
       draft.raw_text ?? null,
       draft.parsed_by ?? null,
     ],
