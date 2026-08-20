@@ -30,6 +30,8 @@ export interface OrderView {
   carrier_name?: string | null;
   carrier_plate?: string | null;
   trip_id?: string | null;
+  /** Status of the trip this order sits in, including a not-yet-accepted one. */
+  trip_status?: string | null;
 }
 
 /**
@@ -38,13 +40,15 @@ export interface OrderView {
  */
 const CARRIER_JOIN = `
   LEFT JOIN LATERAL (
-    SELECT c.name AS carrier_name, v.plate AS carrier_plate, tr.id AS trip_id
+    SELECT c.name AS carrier_name, v.plate AS carrier_plate,
+           tr.id AS trip_id, tr.status AS trip_status
     FROM trip_stops ts
-    JOIN trips tr ON tr.id = ts.trip_id
-                 AND tr.status IN ('accepted', 'in_transit', 'completed')
+    JOIN trips tr ON tr.id = ts.trip_id AND tr.status <> 'declined'
     JOIN vehicles v ON v.id = tr.vehicle_id
     JOIN carriers c ON c.id = v.carrier_id
     WHERE ts.order_id = o.id
+    -- An accepted trip outranks a merely proposed one.
+    ORDER BY CASE tr.status WHEN 'proposed' THEN 1 ELSE 0 END
     LIMIT 1
   ) carrier ON true`;
 
@@ -84,7 +88,7 @@ export async function listTypedOrders(limit = 25): Promise<OrderView[]> {
             o.cargo, o.weight_kg, o.needs_cooling, o.ready_at, o.deadline_at,
             o.status, o.raw_text, o.parsed_by,
             d.km,
-            carrier.carrier_name, carrier.carrier_plate, carrier.trip_id
+            carrier.carrier_name, carrier.carrier_plate, carrier.trip_id, carrier.trip_status
      FROM orders o
      JOIN settlements so ON so.id = o.origin_id
      JOIN settlements sd ON sd.id = o.destination_id
@@ -141,6 +145,8 @@ export interface TripStopView {
   weight_kg: number | null;
   shipper_name: string | null;
   done_at: string | null;
+  /** Placed by a person rather than the demand generator. */
+  is_typed: boolean;
 }
 
 export interface TripView {
@@ -204,7 +210,8 @@ export async function listTrips(status?: TripView["status"]): Promise<TripView[]
 
   const stops = await db.query<TripStopView & { trip_id: string }>(
     `SELECT ts.id, ts.trip_id, ts.seq, ts.settlement_id, s.name_ru AS settlement_name,
-            s.lat, s.lon, ts.action, ts.order_id, o.cargo, o.weight_kg, o.shipper_name, ts.done_at
+            s.lat, s.lon, ts.action, ts.order_id, o.cargo, o.weight_kg, o.shipper_name, ts.done_at,
+            (o.raw_text IS NOT NULL) AS is_typed
      FROM trip_stops ts
      JOIN settlements s ON s.id = ts.settlement_id
      LEFT JOIN orders o ON o.id = ts.order_id

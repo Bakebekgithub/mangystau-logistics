@@ -275,6 +275,34 @@ function ProposalCard({
           {ASSUMPTIONS.fuelShareOfOperatingCost} — итоговую цену стороны согласуют сами
         </p>
 
+        <ul className="mt-3 space-y-1.5 border-t border-ink-200 pt-3">
+          {trip.stops
+            .filter((stop) => stop.action === "pickup" && stop.cargo)
+            .map((stop) => {
+              const drop = trip.stops.find(
+                (other) => other.order_id === stop.order_id && other.action === "dropoff",
+              );
+              return (
+                <li key={stop.id} className="flex items-baseline justify-between gap-3 text-small">
+                  <span className="min-w-0 truncate">
+                    <span className={stop.is_typed ? "font-semibold text-brand" : "text-ink-700"}>
+                      {stop.cargo}
+                    </span>
+                    {stop.weight_kg ? (
+                      <span className="text-ink-500"> · {weight(stop.weight_kg)}</span>
+                    ) : null}
+                    {stop.is_typed ? (
+                      <span className="ml-1.5 rounded-pill bg-brand-soft px-1.5 py-0.5 text-[0.625rem] font-medium text-brand">
+                        ваша заявка
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="shrink-0 text-ink-500">→ {drop?.settlement_name ?? "—"}</span>
+                </li>
+              );
+            })}
+        </ul>
+
         <div className="mt-3.5">
           <LadenBar ladenKm={trip.laden_km} emptyKm={trip.empty_km} />
         </div>

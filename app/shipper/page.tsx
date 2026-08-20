@@ -74,8 +74,17 @@ export default async function ShipperPage() {
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <Badge tone={status.tone} dot={order.status === "in_transit"}>
-                          {status.label}
+                        <Badge
+                          tone={
+                            order.status === "new" && order.trip_status === "proposed"
+                              ? "accent"
+                              : status.tone
+                          }
+                          dot={order.status === "in_transit"}
+                        >
+                          {order.status === "new" && order.trip_status === "proposed"
+                            ? "Машина подобрана"
+                            : status.label}
                         </Badge>
                       </div>
                     </div>
@@ -85,7 +94,23 @@ export default async function ShipperPage() {
                       {order.parsed_by === "ai" ? "разобрано ИИ" : "разобрано по словарю"}
                     </div>
 
-                    {order.carrier_plate ? (
+                    {order.carrier_plate && order.trip_status === "proposed" ? (
+                      <div className="mt-3 flex items-center gap-2.5 rounded-control border border-brand-border bg-brand-soft px-3 py-2.5">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[0.6875rem] font-bold text-brand">
+                          {order.carrier_plate.slice(0, 3)}
+                        </span>
+                        <span className="min-w-0 text-small">
+                          <span className="block font-medium text-ink-900">
+                            {order.carrier_name}
+                          </span>
+                          <span className="block text-ink-600">
+                            {order.carrier_plate} · рейс собран, ждём подтверждения перевозчика
+                          </span>
+                        </span>
+                      </div>
+                    ) : null}
+
+                    {order.carrier_plate && order.trip_status !== "proposed" ? (
                       <div className="mt-3 flex items-center gap-2.5 rounded-control border border-laden-border bg-laden-soft px-3 py-2.5">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[0.6875rem] font-bold text-laden-ink">
                           {order.carrier_plate.slice(0, 3)}
