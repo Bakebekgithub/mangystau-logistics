@@ -43,6 +43,8 @@ export interface Order {
   cargo: string;
   weight_kg: number;
   needs_cooling: boolean;
+  /** Body type the shipper insists on. Null means the engine chooses. */
+  required_kind?: VehicleKind | null;
   ready_at: string;
   deadline_at: string;
   /** What the shipper offers, in tenge. Set by the shipper, not the engine. */

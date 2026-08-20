@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Alert, Badge, Surface, buttonClass } from "./ui";
 import type { ParsedOrder } from "@/lib/ai/parse-order";
+import { BODY_LABEL, bodiesForCargo, suggestBodies } from "@/lib/engine/cargo-fit";
 import { ASSUMPTIONS } from "@/lib/engine/economics";
 import { kzt, weight, when } from "@/lib/format";
 
@@ -38,6 +39,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
   const [shipper, setShipper] = useState("");
   const [phone, setPhone] = useState("");
   const [price, setPrice] = useState("");
+  const [requiredKind, setRequiredKind] = useState("");
   const [floor, setFloor] = useState<PriceFloor | null>(null);
   const [phase, setPhase] = useState<"idle" | "parsing" | "saving" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +96,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
           shipper_name: shipper || "Отправитель",
           shipper_phone: phone.trim() || null,
           offered_price_kzt: Number(price.replace(/\s/g, "")) || null,
+          required_kind: requiredKind || null,
           raw_text: text,
         }),
       });
@@ -107,6 +110,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
       setDraft(null);
       setPhone("");
       setPrice("");
+      setRequiredKind("");
       setPhase("done");
       router.refresh();
       setTimeout(() => setPhase("idle"), 4000);
@@ -117,6 +121,16 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
   }
 
   const complete = Boolean(draft?.origin_id && draft?.destination_id && draft?.cargo && draft?.weight_kg);
+
+  // Whether the body the shipper picked can actually take this cargo. Said out
+  // loud rather than blocked: they may know something the keyword list does not,
+  // and it is their consignment.
+  const fitsChoice =
+    !requiredKind ||
+    !draft?.cargo ||
+    bodiesForCargo(draft.cargo, draft.needs_cooling).includes(
+      requiredKind as ReturnType<typeof bodiesForCargo>[number],
+    );
 
   return (
     <Surface className="overflow-hidden">
@@ -239,6 +253,34 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
                 />
                 Нужен рефрижератор
               </label>
+            </div>
+
+            <div className="mt-3.5 rounded-control border border-ink-200 bg-white p-3">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span className="text-caption uppercase text-ink-500">Машина</span>
+                <select
+                  value={requiredKind}
+                  onChange={(event) => setRequiredKind(event.target.value)}
+                  className="rounded-control border border-ink-300 bg-white px-2.5 py-1.5 text-small text-ink-900 transition focus:border-brand-border focus:outline-none"
+                >
+                  <option value="">Подберём сами</option>
+                  {(Object.keys(BODY_LABEL) as (keyof typeof BODY_LABEL)[]).map((kind) => (
+                    <option key={kind} value={kind}>
+                      {BODY_LABEL[kind][0]!.toUpperCase() + BODY_LABEL[kind].slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <p className="mt-2 text-small text-ink-600">
+                {requiredKind
+                  ? fitsChoice
+                    ? `Ищем только ${BODY_LABEL[requiredKind as keyof typeof BODY_LABEL]}. Машин такого типа меньше, поэтому ждать можно дольше.`
+                    : `${BODY_LABEL[requiredKind as keyof typeof BODY_LABEL][0]!.toUpperCase()}${BODY_LABEL[requiredKind as keyof typeof BODY_LABEL].slice(1)} для такого груза не подходит — заявка может остаться без машины.`
+                  : draft.cargo
+                    ? `По грузу «${draft.cargo}» подойдёт ${suggestBodies(draft.cargo, draft.needs_cooling)} — выберем сами, если вам не важно.`
+                    : "Укажите груз — подскажем, какая машина подойдёт."}
+              </p>
             </div>
 
             {draft.warnings.length > 0 ? (

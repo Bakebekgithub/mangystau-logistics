@@ -19,6 +19,7 @@ export interface DraftOrder {
   cargo: string;
   weight_kg: number;
   needs_cooling: boolean;
+  required_kind?: string | null;
   ready_at: string;
   deadline_at: string;
   offered_price_kzt?: number | null;
@@ -31,6 +32,8 @@ export async function parseOrderText(text: string): Promise<ParsedOrder> {
   const context = await loadContext();
   return parseOrder(text, { settlements: context.settlements, now: new Date() });
 }
+
+const VEHICLE_KINDS = ["tent", "refrigerator", "flatbed", "tipper"];
 
 export class OrderValidationError extends Error {}
 
@@ -80,11 +83,12 @@ export async function createOrder(draft: DraftOrder): Promise<Order> {
   const [created] = await db.query<Order>(
     `INSERT INTO orders (
        id, shipper_name, shipper_phone, origin_id, destination_id, cargo, weight_kg,
-       needs_cooling, ready_at, deadline_at, offered_price_kzt, status, raw_text, parsed_by
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'new',$12,$13)
+       needs_cooling, required_kind, ready_at, deadline_at, offered_price_kzt,
+       status, raw_text, parsed_by
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'new',$13,$14)
      RETURNING id, shipper_name, shipper_phone, origin_id, destination_id, cargo, weight_kg,
-               needs_cooling, ready_at, deadline_at, offered_price_kzt, price_status,
-               status, raw_text, parsed_by`,
+               needs_cooling, required_kind, ready_at, deadline_at, offered_price_kzt,
+               price_status, status, raw_text, parsed_by`,
     [
       id,
       draft.shipper_name.trim() || "Отправитель",
@@ -94,6 +98,7 @@ export async function createOrder(draft: DraftOrder): Promise<Order> {
       draft.cargo.trim(),
       Math.round(draft.weight_kg),
       draft.needs_cooling,
+      VEHICLE_KINDS.includes(draft.required_kind ?? "") ? draft.required_kind : null,
       ready.toISOString(),
       deadline.toISOString(),
       draft.offered_price_kzt && draft.offered_price_kzt > 0 ? Math.round(draft.offered_price_kzt) : null,

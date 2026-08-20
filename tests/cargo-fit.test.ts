@@ -5,7 +5,7 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 
-import { bodyFitsCargo, classifyCargo } from "../lib/engine/cargo-fit.ts";
+import { bodiesForCargo, bodyFitsCargo, classifyCargo, suggestBodies } from "../lib/engine/cargo-fit.ts";
 
 describe("cargo and body", () => {
   it("keeps a tipper to loose freight", () => {
@@ -70,6 +70,14 @@ describe("cargo and body", () => {
     assert.equal(bodyFitsCargo("refrigerator", "запчасти", true), true);
     assert.equal(bodyFitsCargo("tent", "запчасти", true), false);
     assert.equal(bodyFitsCargo("flatbed", "продукты питания", true), false);
+  });
+
+  it("tells the shipper which bodies suit their cargo", () => {
+    assert.deepEqual(bodiesForCargo("щебень"), ["flatbed", "tipper"]);
+    assert.deepEqual(bodiesForCargo("рыба", true), ["refrigerator"]);
+    assert.deepEqual(bodiesForCargo("мебель"), ["tent"]);
+    assert.equal(suggestBodies("щебень"), "бортовая или самосвал");
+    assert.equal(suggestBodies("рыба", true), "рефрижератор");
   });
 
   it("treats anything unfamiliar as packaged goods", () => {

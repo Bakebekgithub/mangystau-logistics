@@ -123,3 +123,29 @@ export const BODY_ACCEPTS_LABEL: Record<VehicleKind, string> = {
   flatbed: "длинномерные и навалочные грузы",
   tipper: "только навалочные грузы",
 };
+
+/** Every body that would accept this consignment, in fleet order. */
+export function bodiesForCargo(cargo: string, needsCooling = false): VehicleKind[] {
+  const order: VehicleKind[] = ["tent", "refrigerator", "flatbed", "tipper"];
+  return order.filter((kind) => bodyFitsCargo(kind, cargo, needsCooling));
+}
+
+export const BODY_LABEL: Record<VehicleKind, string> = {
+  tent: "тент",
+  refrigerator: "рефрижератор",
+  flatbed: "бортовая",
+  tipper: "самосвал",
+};
+
+/**
+ * What the platform would ask for if the shipper says nothing.
+ *
+ * Shown next to the optional vehicle picker, so the choice the engine is about
+ * to make is visible before it is made — and can be overridden by someone who
+ * knows their cargo better than a keyword list does.
+ */
+export function suggestBodies(cargo: string, needsCooling = false): string {
+  const bodies = bodiesForCargo(cargo, needsCooling);
+  if (bodies.length === 0) return "подберём машину по весу и маршруту";
+  return bodies.map((kind) => BODY_LABEL[kind]).join(" или ");
+}

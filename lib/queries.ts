@@ -20,6 +20,7 @@ export interface OrderView {
   cargo: string;
   weight_kg: number;
   needs_cooling: boolean;
+  required_kind: VehicleKind | null;
   ready_at: string;
   deadline_at: string;
   /** What the shipper offers, and any counter from a carrier. */
@@ -64,7 +65,7 @@ export async function listOrders(status?: OrderStatus, limit = 200): Promise<Ord
     `SELECT o.id, o.shipper_name,
             o.origin_id, so.name_ru AS origin_name,
             o.destination_id, sd.name_ru AS destination_name, sd.place AS destination_place,
-            o.cargo, o.weight_kg, o.needs_cooling, o.ready_at, o.deadline_at,
+            o.cargo, o.weight_kg, o.needs_cooling, o.required_kind, o.ready_at, o.deadline_at,
             o.offered_price_kzt, o.counter_price_kzt, o.price_status,
             o.status, o.raw_text, o.parsed_by,
             d.km
@@ -92,7 +93,7 @@ export async function listTypedOrders(limit = 25): Promise<OrderView[]> {
     `SELECT o.id, o.shipper_name,
             o.origin_id, so.name_ru AS origin_name,
             o.destination_id, sd.name_ru AS destination_name, sd.place AS destination_place,
-            o.cargo, o.weight_kg, o.needs_cooling, o.ready_at, o.deadline_at,
+            o.cargo, o.weight_kg, o.needs_cooling, o.required_kind, o.ready_at, o.deadline_at,
             o.offered_price_kzt, o.counter_price_kzt, o.price_status,
             o.status, o.raw_text, o.parsed_by,
             d.km,
@@ -122,7 +123,7 @@ export async function listUnplannedOrders(): Promise<OrderView[]> {
     `SELECT o.id, o.shipper_name,
             o.origin_id, so.name_ru AS origin_name,
             o.destination_id, sd.name_ru AS destination_name, sd.place AS destination_place,
-            o.cargo, o.weight_kg, o.needs_cooling, o.ready_at, o.deadline_at,
+            o.cargo, o.weight_kg, o.needs_cooling, o.required_kind, o.ready_at, o.deadline_at,
             o.offered_price_kzt, o.counter_price_kzt, o.price_status,
             o.status, o.raw_text, o.parsed_by,
             d.km

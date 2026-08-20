@@ -1,6 +1,7 @@
 import { CounterOffer } from "@/components/CounterOffer";
 import { OrderComposer } from "@/components/OrderComposer";
 import { Badge, EmptyState, Metric, SectionHead, Surface, TopBar } from "@/components/ui";
+import { BODY_LABEL } from "@/lib/engine/cargo-fit";
 import { recommendedOrderPriceKzt } from "@/lib/engine/economics";
 import { km, kzt, weight, when } from "@/lib/format";
 import { listSettlements, listTypedOrders, type OrderView } from "@/lib/queries";
@@ -84,7 +85,10 @@ export default async function ShipperPage() {
                           <span>{order.cargo}</span>
                           <span className="tnum">{weight(order.weight_kg)}</span>
                           {order.km !== null ? <span className="tnum">{km(order.km)}</span> : null}
-                          {order.needs_cooling ? <span className="text-brand">рефрижератор</span> : null}
+                          {order.needs_cooling ? <span className="text-brand">нужен холод</span> : null}
+                          {order.required_kind ? (
+                            <span className="text-brand">только {BODY_LABEL[order.required_kind]}</span>
+                          ) : null}
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">

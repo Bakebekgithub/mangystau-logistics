@@ -55,7 +55,8 @@ export async function loadOrders(status?: Order["status"]): Promise<Order[]> {
   const where = status ? `WHERE status = $1` : ``;
   return db.query<Order>(
     `SELECT id, shipper_name, origin_id, destination_id, cargo, weight_kg,
-            needs_cooling, ready_at, deadline_at, offered_price_kzt, status, raw_text, parsed_by
+            needs_cooling, required_kind, ready_at, deadline_at, offered_price_kzt,
+            status, raw_text, parsed_by
      FROM orders ${where} ORDER BY created_at`,
     status ? [status] : [],
   );

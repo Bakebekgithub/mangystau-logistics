@@ -75,6 +75,10 @@ CREATE TABLE orders (
   cargo          text NOT NULL,
   weight_kg      integer NOT NULL CHECK (weight_kg > 0),
   needs_cooling  boolean NOT NULL DEFAULT false,
+  -- The shipper may insist on a body type. Optional on purpose: most know their
+  -- cargo, not the fleet, and the engine can work it out from the cargo itself.
+  required_kind  text CHECK (required_kind IS NULL OR
+                             required_kind IN ('tent', 'refrigerator', 'flatbed', 'tipper')),
   ready_at       timestamptz NOT NULL,
   deadline_at    timestamptz NOT NULL,
 
