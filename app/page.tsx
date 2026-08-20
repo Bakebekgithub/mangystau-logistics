@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { Badge, LinkButton, Logo, Surface } from "@/components/ui";
+import { Badge, LinkButton, Logo, Surface, TruckIcon } from "@/components/ui";
 import { indicativePriceKzt } from "@/lib/engine/economics";
 import { km, kzt, litres, percent, weight } from "@/lib/format";
 import { analytics, listTrips } from "@/lib/queries";
@@ -51,7 +51,7 @@ export default async function HomePage() {
             <span className="text-brand">без звонков и поисков</span>
           </h1>
 
-          <p className="mt-5 max-w-md text-[1.0625rem] leading-relaxed text-ink-400">
+          <p className="mt-5 max-w-md text-[1.0625rem] leading-relaxed text-ink-700">
             Напишите, что и куда везти. Мы найдём машину, которая уже едет в ту сторону,
             и добавим ваш груз к её рейсу. Дешевле, чем гнать машину отдельно.
           </p>
@@ -96,7 +96,7 @@ export default async function HomePage() {
       {/* The differentiator, shown rather than argued. */}
       <section className="mx-auto max-w-6xl px-5 py-14">
         <h2 className="text-h1 text-ink-900">Почему дешевле</h2>
-        <p className="mt-3 max-w-2xl text-body text-ink-400">
+        <p className="mt-3 max-w-2xl text-body text-ink-600">
           Отдельная машина за 400 кг в село — это невыгодно, поэтому такие заявки обычно
           вообще никто не берёт. Мы складываем несколько мелких грузов в один рейс.
         </p>
@@ -111,8 +111,8 @@ export default async function HomePage() {
                 ["300 кг", "в Жетыбай"],
               ].map(([mass, place]) => (
                 <li key={place} className="flex items-center gap-3 text-small">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-control bg-ink-100 text-[0.625rem] text-ink-500">
-                    🚛
+                  <span className="flex h-7 w-7 items-center justify-center rounded-control bg-empty-soft text-empty-ink">
+                    <TruckIcon className="h-4 w-4" />
                   </span>
                   <span className="tnum text-ink-700">{mass}</span>
                   <span className="text-ink-500">{place}</span>
@@ -129,8 +129,8 @@ export default async function HomePage() {
           <Surface accent className="p-5">
             <div className="text-caption uppercase text-laden-ink">Один рейс</div>
             <div className="mt-3 flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-control bg-brand-soft text-base">
-                🚛
+              <span className="flex h-9 w-9 items-center justify-center rounded-control bg-laden-soft text-laden-ink">
+                <TruckIcon className="h-5 w-5" />
               </span>
               <div>
                 <div className="tnum text-body font-semibold text-ink-900">1400 кг</div>
@@ -148,7 +148,7 @@ export default async function HomePage() {
       <section className="border-t border-ink-200 bg-ink-50 py-14">
         <div className="mx-auto max-w-6xl px-5">
           <h2 className="text-h1 text-ink-900">Что это даёт</h2>
-          <p className="mt-3 max-w-2xl text-body text-ink-400">
+          <p className="mt-3 max-w-2xl text-body text-ink-600">
             Цифры ниже посчитаны на текущем плане перевозок в системе — по настоящим дорожным
             расстояниям Мангистау.
           </p>
@@ -248,7 +248,7 @@ function HeroExample({ trip }: { trip: Awaited<ReturnType<typeof listTrips>>[num
 
           <ul className="mt-4 space-y-1.5">
             {cargo.map((line, index) => (
-              <li key={index} className="flex items-center gap-2.5 text-small text-ink-400">
+              <li key={index} className="flex items-center gap-2.5 text-small text-ink-600">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand" />
                 {line}
               </li>
@@ -284,7 +284,7 @@ function Step({ n, title, text }: { n: string; title: string; text: string }) {
         {n}
       </div>
       <h3 className="mt-3.5 text-h3 text-ink-900">{title}</h3>
-      <p className="mt-1.5 text-small text-ink-400">{text}</p>
+      <p className="mt-1.5 text-small text-ink-600">{text}</p>
     </div>
   );
 }
@@ -329,7 +329,7 @@ function RoleCard({
       <Surface interactive className="h-full p-5">
         <div className="text-h3 text-ink-900">{title}</div>
         <div className="mt-1 text-caption uppercase text-ink-500">{who}</div>
-        <p className="mt-3 text-small text-ink-400">{does}</p>
+        <p className="mt-3 text-small text-ink-600">{does}</p>
         <span className="mt-4 inline-block text-small font-medium text-brand">Открыть →</span>
       </Surface>
     </Link>

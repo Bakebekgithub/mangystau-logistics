@@ -64,7 +64,7 @@ export function RankedBars({
                 }`}
               >
                 {item.value.toLocaleString("ru-RU")}
-                {unit ? <span className="text-ink-400"> {unit}</span> : null}
+                {unit ? <span className="text-ink-600"> {unit}</span> : null}
               </span>
             </div>
             <div className="mt-1 h-1.5 overflow-hidden rounded-pill bg-ink-100">
@@ -78,7 +78,7 @@ export function RankedBars({
               />
             </div>
             {item.note ? (
-              <div className="mt-0.5 text-[0.6875rem] text-ink-400">{item.note}</div>
+              <div className="mt-0.5 text-[0.6875rem] text-ink-600">{item.note}</div>
             ) : null}
           </li>
         );
@@ -121,7 +121,7 @@ export function BeforeAfterBars({
               <span className="text-small text-ink-700">{row.label}</span>
               <span className="tnum text-small text-ink-900">
                 {Math.round(total).toLocaleString("ru-RU")}{" "}
-                <span className="text-ink-400">{unit}</span>
+                <span className="text-ink-600">{unit}</span>
               </span>
             </div>
             <div
@@ -182,7 +182,7 @@ export function UnitTrack({
     <div>
       <div className="flex items-baseline justify-between">
         <span className="text-caption uppercase text-ink-500">{label}</span>
-        <span className="tnum text-small text-ink-400">
+        <span className="tnum text-small text-ink-600">
           <span className="text-ink-900">{served}</span> из {total}
         </span>
       </div>

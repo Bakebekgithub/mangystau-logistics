@@ -281,7 +281,7 @@ function SettlementLabels({ settlements }: { settlements: MapSettlement[] }) {
             offset={[8, 0]}
             className="!border-none !bg-transparent !shadow-none"
           >
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-600">
               {settlement.name_ru}
             </span>
           </Tooltip>

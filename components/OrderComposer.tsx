@@ -105,7 +105,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
             }}
             rows={3}
             placeholder="надо 3 тонны арматуры из Актау в Жанаозен завтра до обеда"
-            className="w-full resize-y rounded-control border border-ink-300 bg-white p-3.5 text-body text-ink-900 placeholder:text-ink-400 transition focus:border-brand-border focus:outline-none"
+            className="w-full resize-y rounded-control border border-ink-300 bg-white p-3.5 text-body text-ink-900 placeholder:text-ink-600 transition focus:border-brand-border focus:outline-none"
           />
         </div>
 
@@ -117,7 +117,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
           >
             {phase === "parsing" ? "Разбираю…" : "Разобрать"}
           </button>
-          <span className="text-small text-ink-400">примеры:</span>
+          <span className="text-small text-ink-600">примеры:</span>
           {EXAMPLES.map((example) => (
             <button
               key={example.short}
@@ -125,7 +125,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
                 setText(example.text);
                 setDraft(null);
               }}
-              className="rounded-pill border border-ink-200 px-2.5 py-1 text-[0.6875rem] text-ink-400 transition hover:border-ink-400 hover:text-ink-900"
+              className="rounded-pill border border-ink-200 px-2.5 py-1 text-[0.6875rem] text-ink-600 transition hover:border-ink-400 hover:text-ink-900"
             >
               {example.short}
             </button>
@@ -198,7 +198,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
             <div className="mt-3.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-small text-ink-500">
               <span>Готов: {draft.ready_at ? when(draft.ready_at) : "—"}</span>
               <span>Срок: {draft.deadline_at ? when(draft.deadline_at) : "—"}</span>
-              <label className="flex cursor-pointer items-center gap-2 text-ink-400">
+              <label className="flex cursor-pointer items-center gap-2 text-ink-600">
                 <input
                   type="checkbox"
                   checked={draft.needs_cooling}
@@ -252,7 +252,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
 
 const INPUT =
   "w-full rounded-control border border-ink-300 bg-white px-3 py-2 text-body text-ink-900 " +
-  "placeholder:text-ink-400 transition focus:border-brand-border focus:outline-none";
+  "placeholder:text-ink-600 transition focus:border-brand-border focus:outline-none";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

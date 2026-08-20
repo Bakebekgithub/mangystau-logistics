@@ -267,7 +267,7 @@ function ProposalCard({
           <LadenBar ladenKm={trip.laden_km} emptyKm={trip.empty_km} />
         </div>
 
-        <p className="mt-3 rounded-control bg-ink-50 px-3 py-2.5 text-small text-ink-400">
+        <p className="mt-3 rounded-control bg-ink-50 px-3 py-2.5 text-small text-ink-600">
           {trip.explanation}
         </p>
       </div>
@@ -328,7 +328,7 @@ function ActiveTripCard({ trip, price }: { trip: TripView; price: number }) {
         <div className="mt-4 rounded-control border border-brand-border/50 bg-brand-soft p-3.5">
           <div className="text-caption uppercase text-brand">Следующая точка</div>
           <div className="mt-1 text-h3 text-ink-900">{next.settlement_name}</div>
-          <div className="text-small text-ink-400">
+          <div className="text-small text-ink-600">
             {next.action === "pickup" ? "Забрать" : "Выгрузить"}
             {next.cargo ? ` ${next.cargo}` : ""}
             {next.weight_kg ? `, ${weight(next.weight_kg)}` : ""}

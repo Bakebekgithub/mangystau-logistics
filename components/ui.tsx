@@ -287,6 +287,22 @@ export function TopBar({ current }: { current?: Role }) {
   );
 }
 
+/** A lorry, drawn rather than borrowed from the emoji font. */
+export function TruckIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <path
+        d="M2 7.5h11v9H2zM13 11h4.2l2.8 3v2.5h-7z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <circle cx="6.5" cy="18" r="1.9" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="16.5" cy="18" r="1.9" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
 /** A mark rather than an emoji: two lanes converging into one. */
 export function Logo({ className = "h-6 w-6" }: { className?: string }) {
   return (
@@ -400,7 +416,7 @@ export function RouteTimeline({
                 ? "bg-laden text-white"
                 : stop.action === "pickup"
                   ? "bg-brand text-white"
-                  : "border border-ink-400 bg-ink-100 text-ink-400",
+                  : "border border-ink-400 bg-ink-100 text-ink-600",
             ].join(" ")}
           >
             {stop.done ? "✓" : stop.seq}

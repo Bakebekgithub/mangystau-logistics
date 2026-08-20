@@ -37,7 +37,7 @@ export default async function MethodologyPage() {
       <main className="mx-auto max-w-3xl space-y-8 px-4 py-8">
         <header>
           <h1 className="text-h1 text-ink-900">Методология</h1>
-          <p className="mt-2 text-body text-ink-400">
+          <p className="mt-2 text-body text-ink-600">
             Откуда берётся каждая цифра, что здесь измерено, а что смоделировано, и на каких
             допущениях стоит экономика. Если что-то из этого выглядит спорно — здесь видно, где
             именно спорить.
@@ -170,7 +170,7 @@ export default async function MethodologyPage() {
         </Section>
 
         <Section title="Как движок собирает рейс">
-          <p className="text-body text-ink-400">
+          <p className="text-body text-ink-600">
             Для свободной машины берётся пул заявок, которые она физически может взять: вес
             в пределах вместимости, рефрижератор для скоропортящегося, срок ещё не истёк.
             Дальше перебираются комбинации из нескольких заявок, и для каждой ищется порядок
@@ -179,7 +179,7 @@ export default async function MethodologyPage() {
             лучшего найденного варианта. Для того числа заявок, которое водитель берёт за раз,
             это даёт точный оптимум за миллисекунды, а не эвристику, которую пришлось бы защищать.
           </p>
-          <p className="mt-3 text-body text-ink-400">
+          <p className="mt-3 text-body text-ink-600">
             Рейс не предлагается, если он проезжает больше, чем те же заявки по отдельности.
             Распределение по парку жадное: машина, чей рейс экономит больше, выбирает первой,
             и её заявки уходят из пула. Это объяснимо словами — «этот рейс экономит больше,
@@ -189,7 +189,7 @@ export default async function MethodologyPage() {
         </Section>
 
         <Section title="Разбор заявки из текста">
-          <p className="text-body text-ink-400">
+          <p className="text-body text-ink-600">
             Сообщение отправителя разбирается двумя равноправными реализациями одного контракта.
             Основная — Claude, ограниченный схемой, в которой пункты заданы перечислением
             настоящих идентификаторов: модель физически не может вернуть пункт, которого нет
@@ -204,7 +204,7 @@ export default async function MethodologyPage() {
         </Section>
 
         <Section title="Что осталось за рамками хакатона">
-          <p className="text-body text-ink-400">
+          <p className="text-body text-ink-600">
             Регистрация и пароли, чат между сторонами, оплата, реальные GPS-трекеры, мобильные
             приложения в сторах, документооборот и накладные. Ничего из этого не сделано, и мы
             это не выдаём за сделанное.
@@ -270,7 +270,7 @@ function Row({
         <span className="tnum text-metric text-ink-900">{value}</span>
       </div>
       <div className="mt-1 text-caption uppercase text-ink-500">{source}</div>
-      <p className="mt-2.5 text-small text-ink-400">{children}</p>
+      <p className="mt-2.5 text-small text-ink-600">{children}</p>
     </Surface>
   );
 }
@@ -312,7 +312,7 @@ function Claim({
             <span className="text-h3 text-ink-900">{title}</span>
             <span className={`tnum text-metric ${numberColor}`}>{value}</span>
           </div>
-          <p className="mt-2 text-small text-ink-400">{children}</p>
+          <p className="mt-2 text-small text-ink-600">{children}</p>
         </div>
       </div>
     </div>
