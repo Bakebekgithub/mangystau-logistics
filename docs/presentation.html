@@ -39,7 +39,7 @@
     position: relative;
     width: 1280px;
     height: 720px;
-    padding: 64px 72px;
+    padding: 52px 64px;
     background: #fff;
     overflow: hidden;
     page-break-after: always;
@@ -58,11 +58,11 @@
     font-size: 13px; font-weight: 600; letter-spacing: 0.09em;
     text-transform: uppercase; color: var(--brand);
   }
-  h1 { font-size: 62px; line-height: 1.04; letter-spacing: -0.025em; font-weight: 700; }
-  h2 { font-size: 40px; line-height: 1.1; letter-spacing: -0.02em; font-weight: 700; }
-  h3 { font-size: 21px; line-height: 1.25; font-weight: 650; }
-  p, li { font-size: 19px; line-height: 1.5; color: var(--ink-600); }
-  .lead { font-size: 24px; line-height: 1.45; color: var(--ink-700); }
+  h1 { font-size: 54px; line-height: 1.06; letter-spacing: -0.025em; font-weight: 700; }
+  h2 { font-size: 34px; line-height: 1.14; letter-spacing: -0.02em; font-weight: 700; }
+  h3 { font-size: 19px; line-height: 1.28; font-weight: 650; }
+  p, li { font-size: 16.5px; line-height: 1.45; color: var(--ink-600); }
+  .lead { font-size: 20px; line-height: 1.42; color: var(--ink-700); }
   strong { color: var(--ink-900); font-weight: 650; }
   .tnum { font-variant-numeric: tabular-nums; }
 
@@ -74,20 +74,20 @@
     border-top: 1px solid var(--ink-200); padding-top: 12px;
   }
 
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
-  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 
   .card {
     border: 1px solid var(--ink-200); border-radius: 12px;
-    padding: 22px 24px; background: #fff;
+    padding: 18px 20px; background: #fff;
   }
   .card.soft { background: var(--ink-50); }
   .card.accent { background: var(--brand-soft); border-color: var(--brand-border); }
   .card.good { background: var(--laden-soft); border-color: #A9DFD1; }
   .card.cost { background: var(--empty-soft); border-color: #F5C9A3; }
 
-  .stat { font-size: 46px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  .stat { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
   .stat.good { color: var(--laden-ink); }
   .stat.cost { color: var(--empty-ink); }
   .stat.brand { color: var(--brand); }
@@ -95,10 +95,10 @@
     font-size: 12px; font-weight: 600; letter-spacing: 0.07em;
     text-transform: uppercase; color: var(--ink-500); margin-bottom: 10px;
   }
-  .stat-sub { font-size: 15px; color: var(--ink-600); margin-top: 8px; line-height: 1.35; }
+  .stat-sub { font-size: 13.5px; color: var(--ink-600); margin-top: 7px; line-height: 1.32; }
 
   ul { list-style: none; }
-  ul.bullets li { position: relative; padding-left: 26px; margin-top: 13px; }
+  ul.bullets li { position: relative; padding-left: 24px; margin-top: 10px; }
   ul.bullets li::before {
     content: ""; position: absolute; left: 4px; top: 11px;
     width: 7px; height: 7px; border-radius: 50%; background: var(--brand);
@@ -106,22 +106,22 @@
   ul.bullets li.cost::before { background: var(--empty); }
   ul.bullets li.good::before { background: var(--laden); }
 
-  .flow { display: flex; align-items: stretch; gap: 0; margin-top: 26px; }
-  .step { flex: 1; padding: 18px 16px 18px 22px; position: relative; }
+  .flow { display: flex; align-items: stretch; gap: 0; margin-top: 18px; }
+  .step { flex: 1; padding: 14px 13px 14px 18px; position: relative; }
   .step + .step { border-left: 1px solid var(--ink-200); }
   .step-n {
     width: 26px; height: 26px; border-radius: 50%; background: var(--brand);
     color: #fff; font-size: 13px; font-weight: 700;
     display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
   }
-  .step h3 { font-size: 17px; }
-  .step p { font-size: 15px; line-height: 1.4; margin-top: 6px; }
+  .step h3 { font-size: 16px; }
+  .step p { font-size: 13.5px; line-height: 1.38; margin-top: 5px; }
 
   .bar { display: flex; height: 26px; border-radius: 6px; overflow: hidden; gap: 2px; margin-top: 14px; }
   .bar span { display: block; }
 
   table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-  th, td { text-align: left; padding: 11px 14px; font-size: 17px; }
+  th, td { text-align: left; padding: 8px 12px; font-size: 15px; }
   th {
     font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
     color: var(--ink-500); border-bottom: 1px solid var(--ink-300);
@@ -136,8 +136,8 @@
     font-size: 16px; color: var(--ink-700);
   }
   .quote {
-    border-left: 3px solid var(--brand); padding: 4px 0 4px 20px;
-    font-size: 21px; line-height: 1.45; color: var(--ink-700); font-style: italic;
+    border-left: 3px solid var(--brand); padding: 4px 0 4px 18px;
+    font-size: 18px; line-height: 1.45; color: var(--ink-700); font-style: italic;
   }
   .logo-mark {
     display: inline-flex; align-items: center; gap: 11px;
@@ -148,6 +148,22 @@
     display: flex; align-items: center; justify-content: center;
   }
   .link { color: var(--brand); font-weight: 600; }
+
+  /*
+   * Three slides carry more than a 720px page holds — the price derivation, the
+   * data provenance table, and the technology summary. Rather than cut content
+   * that answers a judge's question, they get a tighter scale of their own.
+   * Overflow is measured, not eyeballed: the slide box clips silently.
+   */
+  .slide.dense { padding: 44px 56px; }
+  .slide.dense h2 { font-size: 30px; }
+  .slide.dense h3 { font-size: 17px; }
+  .slide.dense p, .slide.dense li { font-size: 14.5px; line-height: 1.42; }
+  .slide.dense .lead { font-size: 17px; line-height: 1.4; }
+  .slide.dense .card { padding: 14px 16px; }
+  .slide.dense th, .slide.dense td { padding: 5.5px 10px; font-size: 13.5px; }
+  .slide.dense .stat { font-size: 34px; }
+  .slide.dense .foot { left: 56px; right: 56px; }
 </style>
 </head>
 <body>
@@ -166,7 +182,7 @@
   <div>
     <div class="eyebrow">Цифровая платформа грузоперевозок и последнего километра</div>
     <h1 style="margin-top: 18px; max-width: 15.5em;">Область перевозит<br>тот же груз<br>на 5 000 км меньше</h1>
-    <p class="lead" style="margin-top: 26px; max-width: 34em;">
+    <p class="lead" style="margin-top: 18px; max-width: 34em;">
       Диспетчер, который собирает из разрозненных заявок один рейс: попутные грузы вместе,
       обратная загрузка вместо порожнего хода. Работающий MVP на реальной дорожной сети Мангистау.
     </p>
@@ -196,7 +212,7 @@
   <div class="eyebrow">Проблема</div>
   <h2 style="margin-top: 14px; max-width: 22em;">Машины в области ездят полупустыми, а село ждёт неделями</h2>
 
-  <div class="grid4" style="margin-top: 36px;">
+  <div class="grid4" style="margin-top: 24px;">
     <div class="card cost">
       <div class="stat-label">Порожний пробег</div>
       <div class="stat cost tnum">40%</div>
@@ -219,7 +235,7 @@
     </div>
   </div>
 
-  <div style="margin-top: 34px; display:grid; grid-template-columns: 1.05fr 1fr; gap: 32px;">
+  <div style="margin-top: 22px; display:grid; grid-template-columns: 1.05fr 1fr; gap: 32px;">
     <div>
       <h3>Почему это не решается объявлениями</h3>
       <ul class="bullets" style="margin-top: 4px;">
@@ -246,7 +262,7 @@
   <div class="eyebrow">Ключевое отличие</div>
   <h2 style="margin-top: 14px;">Маркетплейс ищет. Диспетчер — собирает.</h2>
 
-  <div class="grid2" style="margin-top: 38px; align-items: start;">
+  <div class="grid2" style="margin-top: 18px; align-items: start;">
     <div class="card">
       <div class="stat-label">Как сегодня — биржа объявлений</div>
       <h3 style="margin-top: 4px;">Четыре заявки — четыре рейса</h3>
@@ -291,7 +307,7 @@
     </div>
   </div>
 
-  <p class="quote" style="margin-top: 32px;">
+  <p class="quote" style="margin-top: 22px;">
     Заявку создавать всё равно надо — но дальше начинается работа, которой на бирже нет:
     перебор комбинаций, порядок остановок, проверка веса и сроков.
   </p>
@@ -338,7 +354,7 @@
     </div>
   </div>
 
-  <div class="grid3" style="margin-top: 40px;">
+  <div class="grid3" style="margin-top: 18px;">
     <div class="card soft">
       <div class="stat-label">Экран отправителя</div>
       <p style="font-size:16px;">Одно поле ввода вместо формы. Свои заявки, кто повёз, номер водителя, статус.</p>
@@ -358,28 +374,27 @@
 </section>
 
 <!-- 5 — Цена -->
-<section class="slide">
+<section class="slide dense">
   <div class="eyebrow">Цена</div>
   <h2 style="margin-top: 14px; max-width: 26em;">Мы не выдумываем тариф региона. Цену ставит заказчик, платформа считает пол.</h2>
 
-  <div class="grid2" style="margin-top: 34px; align-items: start;">
+  <div class="grid2" style="margin-top: 16px; align-items: start;">
     <div>
       <h3>Почему так, а не «ставка за тонно-километр»</h3>
-      <p style="margin-top: 10px;">
-        Реальных фрахтовых ставок Мангистау у нас нет. Подставить выдуманную цифру — значит
-        поставить весь расчёт на догадку: первый же вопрос «откуда ставка?» её сносит.
-        Поэтому цена в системе — <strong>это то, что предложил живой заказчик</strong>,
-        ровно как сегодня по телефону.
+      <p style="margin-top: 8px;">
+        Реальных ставок Мангистау у нас нет, а выдуманная цифра ставит весь расчёт
+        на догадку: первый же вопрос «откуда ставка?» её сносит. Поэтому цена в системе —
+        <strong>то, что предложил живой заказчик</strong>, как сегодня по телефону.
       </p>
-      <h3 style="margin-top: 26px;">Что мы действительно можем посчитать</h3>
+      <h3 style="margin-top: 16px;">Что мы действительно можем посчитать</h3>
       <ul class="bullets" style="margin-top: 2px;">
         <li>Расстояние — по настоящей дорожной сети, а не по прямой</li>
         <li>Расход топлива — с надбавкой за загрузку</li>
         <li>Цену дизеля — розница Казахстана, август 2026</li>
       </ul>
-      <p style="margin-top: 18px;">
+      <p style="margin-top: 14px;">
         Из этих трёх получается <strong>минимум, ниже которого перевозчик едет в убыток</strong>.
-        Это подсказка, а не прайс.
+        Подсказка, а не прайс.
       </p>
     </div>
 
@@ -399,24 +414,20 @@
         </div>
       </div>
 
-      <div class="card" style="margin-top: 18px;">
+      <div class="card" style="margin-top: 14px;">
         <h3>Мелкий груз не стоит десятой части фуры</h3>
-        <p style="margin-top: 8px; font-size:17px;">
+        <p style="margin-top: 6px; font-size:15px;">
           300 кг занимают десятую часть кузова, но кто-то всё равно едет весь маршрут.
-          Поэтому доля кузова считается <strong>не меньше 30%</strong> — иначе рекомендация
-          для села была бы издевательской.
+          Поэтому доля кузова считается <strong>не меньше 30%</strong>.
         </p>
       </div>
 
-      <div class="card good" style="margin-top: 18px;">
+      <div class="card good" style="margin-top: 14px;">
         <h3 style="color: var(--laden-ink);">Торг внутри системы, в обе стороны</h3>
-        <p style="margin-top: 8px; font-size:17px;">
-          Водитель называет свою цену за <strong>конкретный груз</strong>, не за весь рейс.
-          Заказчик отвечает одним из трёх: согласиться, назвать своё число, отказать —
-          тогда перевозчик решает, везти за исходную цену или отдать груз другому.
-        </p>
-        <p style="margin-top: 10px; font-size:17px;">
-          Договорённость остаётся <strong>в данных</strong>, а не в чьей-то переписке.
+        <p style="margin-top: 6px; font-size:15px;">
+          Водитель называет цену за <strong>конкретный груз</strong>, не за рейс. Заказчик
+          отвечает одним из трёх: согласиться, назвать своё число, отказать. Договорённость
+          остаётся <strong>в данных</strong>, а не в чьей-то переписке.
         </p>
       </div>
     </div>
@@ -430,7 +441,7 @@
   <div class="eyebrow">Результат на данных области</div>
   <h2 style="margin-top: 14px;">48 заявок, 18 машин, один прогон движка</h2>
 
-  <div class="grid4" style="margin-top: 34px;">
+  <div class="grid4" style="margin-top: 22px;">
     <div class="card good">
       <div class="stat-label">Оплачиваемых километров</div>
       <div class="stat good tnum">84%</div>
@@ -453,7 +464,7 @@
     </div>
   </div>
 
-  <div class="grid2" style="margin-top: 34px; align-items: start;">
+  <div class="grid2" style="margin-top: 24px; align-items: start;">
     <div class="card">
       <h3>Экономика одного рейса — глазами водителя</h3>
       <table>
@@ -471,8 +482,8 @@
       <h3>Что это меняет для области</h3>
       <ul class="bullets" style="margin-top: 2px;">
         <li class="good"><strong>4 малых удалённых пункта</strong> получили груз, который по отдельности никто бы не повёз</li>
-        <li class="good">Порожние коридоры видны акимату по именам, а не общей цифрой по области</li>
-        <li class="good">Тот же парк машин перевозит больше — без единого нового грузовика</li>
+        <li class="good">Порожние коридоры видны акимату по именам, а не общей цифрой</li>
+        <li class="good">Тот же парк перевозит больше — без нового грузовика</li>
       </ul>
     </div>
   </div>
@@ -481,7 +492,7 @@
 </section>
 
 <!-- 7 — Данные -->
-<section class="slide">
+<section class="slide dense">
   <div class="eyebrow">Данные</div>
   <h2 style="margin-top: 14px;">Что здесь настоящее, а что смоделировано</h2>
   <p class="lead" style="margin-top: 16px; max-width: 46em;">
@@ -490,7 +501,7 @@
     спрос смоделирован — но смоделирован <strong>из структуры самой области</strong>, а не из случайных чисел.
   </p>
 
-  <table style="margin-top: 26px;">
+  <table style="margin-top: 12px;">
     <thead>
       <tr><th>Что</th><th>Статус</th><th>Источник и как проверить</th></tr>
     </thead>
@@ -516,7 +527,7 @@
   <div class="eyebrow">Движок</div>
   <h2 style="margin-top: 14px;">Точный перебор, а не «примерно похоже»</h2>
 
-  <div class="grid2" style="margin-top: 32px; align-items: start;">
+  <div class="grid2" style="margin-top: 22px; align-items: start;">
     <div>
       <h3>Что происходит внутри</h3>
       <ul class="bullets" style="margin-top: 2px;">
@@ -569,47 +580,42 @@
 </section>
 
 <!-- 9 — Технологии -->
-<section class="slide">
+<section class="slide dense">
   <div class="eyebrow">Как это сделано</div>
   <h2 style="margin-top: 14px;">Работающий продукт, а не макет</h2>
 
-  <div class="grid3" style="margin-top: 34px;">
+  <div class="grid3" style="margin-top: 22px;">
     <div class="card">
       <div class="stat-label">Приложение</div>
       <h3>Next.js 16 · React 19 · TypeScript</h3>
-      <p style="margin-top: 10px; font-size:16px;">
-        Один адрес, три роли, адаптивная вёрстка: у водителя это телефон, у акимата — монитор.
+      <p style="margin-top: 8px; font-size:15px;">
+        Один адрес, три роли: у водителя телефон, у акимата монитор.
       </p>
     </div>
     <div class="card">
       <div class="stat-label">База данных</div>
       <h3>PostgreSQL (Neon)</h3>
-      <p style="margin-top: 10px; font-size:16px;">
-        7 таблиц. Локально — та же самая Postgres в WASM, так что схема одна и та же,
-        без «у меня работало».
+      <p style="margin-top: 8px; font-size:15px;">
+        7 таблиц. Локально — та же Postgres в WASM: схема одна, без «у меня работало».
       </p>
     </div>
     <div class="card">
       <div class="stat-label">Карта</div>
       <h3>Leaflet, свой контур области</h3>
-      <p style="margin-top: 10px; font-size:16px;">
-        Без сторонних тайлов: карта не зависит от чужого сервера и не отвалится на сцене
-        из-за интернета.
+      <p style="margin-top: 8px; font-size:15px;">
+        Без сторонних тайлов: чужой сервер не уронит её на сцене.
       </p>
     </div>
   </div>
 
-  <div class="grid2" style="margin-top: 26px; align-items: start;">
+  <div class="grid2" style="margin-top: 18px; align-items: start;">
     <div class="card soft">
       <h3>Разбор сообщений — два независимых пути</h3>
-      <p style="margin-top: 10px; font-size:17px;">
+      <p style="margin-top: 8px; font-size:15px;">
         Первый — модель Claude со строгой схемой ответа. Второй — <strong>словарь региона</strong>:
-        65 пунктов вместе с казахскими и русскими написаниями, единицы веса, «завтра до обеда».
-      </p>
-      <p style="margin-top: 10px; font-size:17px;">
-        Второй путь не заглушка, а полноценная реализация того же контракта — 12 тестов.
-        <strong>Демо работает без интернета и без ключа</strong>, и на экране всегда видно,
-        чем разобрано.
+        65 пунктов с казахскими и русскими написаниями, единицы веса, «завтра до обеда».
+        Не заглушка, а та же реализация контракта, 12 тестов.
+        <strong>Демо работает без ключа и без интернета</strong>, и на экране видно, чем разобрано.
       </p>
     </div>
     <div class="card soft">
@@ -621,8 +627,8 @@
         <li>Разбор: казахские и русские названия, единицы веса, кириллица в границах слов</li>
         <li>Соответствие груза кузову — включая случаи, когда одно слово содержится в другом</li>
       </ul>
-      <p style="margin-top: 14px; font-size:16px;">
-        <strong>57 тестов, все зелёные.</strong> Плюс палитра проверена на цветовую слепоту
+      <p style="margin-top: 10px; font-size:15px;">
+        <strong>57 тестов, все зелёные.</strong> Палитра проверена на цветовую слепоту
         расчётом, а не на глаз.
       </p>
     </div>
@@ -636,7 +642,7 @@
   <div class="eyebrow">Демонстрация</div>
   <h2 style="margin-top: 14px;">Полный цикл за две минуты, на настоящих API</h2>
 
-  <div class="flow" style="margin-top: 30px;">
+  <div class="flow" style="margin-top: 20px;">
     <div class="step">
       <div class="step-n">1</div>
       <h3>Пишем заявку</h3>
@@ -669,7 +675,7 @@
     </div>
   </div>
 
-  <div class="grid2" style="margin-top: 38px; align-items: start;">
+  <div class="grid2" style="margin-top: 18px; align-items: start;">
     <div class="card accent">
       <h3 style="color: var(--brand);">Демо-режим встроен в продукт</h3>
       <p style="margin-top: 10px; font-size:17px;">
@@ -696,7 +702,7 @@
   <div class="eyebrow">Честные границы</div>
   <h2 style="margin-top: 14px;">Что осталось за рамками MVP — и что дальше</h2>
 
-  <div class="grid2" style="margin-top: 32px; align-items: start;">
+  <div class="grid2" style="margin-top: 22px; align-items: start;">
     <div class="card">
       <div class="stat-label">Сознательно не делали</div>
       <ul class="bullets" style="margin-top: 8px;">
@@ -739,7 +745,7 @@
 
   <div>
     <h1 style="max-width: 17em;">Тот же парк машин.<br>Больше перевезённого груза.<br>Ни одной выдуманной цифры.</h1>
-    <div class="grid3" style="margin-top: 44px;">
+    <div class="grid3" style="margin-top: 20px;">
       <div class="card good">
         <div class="stat-label">Оплачиваемых километров</div>
         <div class="stat good tnum">84%</div>
