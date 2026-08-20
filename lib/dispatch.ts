@@ -213,8 +213,13 @@ export async function proposeAcrossFleet(
     for (const vehicle of unassigned.values()) {
       let plans = cache.get(vehicle.id);
       if (!plans) {
+        // A hand-placed order is exempt: if no combination pays for its diesel,
+        // the driver should still be offered the trip and told plainly that the
+        // shipper is paying less than the fuel costs. Dropping it left a person
+        // who had just placed an order looking at an empty screen — which reads
+        // as a broken product, not as prudent economics.
         plans = proposeTrips(vehicle, pool, context.dist, context.nameOf, matchOptions).filter(
-          coversFuel,
+          (plan) => plan.order_ids.some((id) => typed.has(id)) || coversFuel(plan),
         );
         cache.set(vehicle.id, plans);
       }

@@ -233,9 +233,20 @@ export function DriverConsole({
   // A trip was planned for a particular truck, so a truck at least that big can
   // certainly run it. Beyond weight, every consignment aboard has to suit the
   // body: a tipper is not carrying bottled water, whatever its tonnage.
-  const fits = (trip: TripView) =>
+  const suitsProfile = (trip: TripView) =>
     trip.capacity_kg <= profile.capacity_kg &&
     trip.stops.every((stop) => !stop.cargo || bodyFitsCargo(profile.kind, stop.cargo));
+
+  /**
+   * The filter never hides a trip carrying an order somebody just placed.
+   *
+   * It did, and the effect was the worst kind of bug: the shipper placed a load
+   * of rebar, the engine built the trip correctly, and the carrier screen showed
+   * nothing at all because the profile happened to say "refrigerator". A person
+   * watching concludes the product is broken. Such a trip is shown and marked as
+   * not matching the body, which is the honest version of the same fact.
+   */
+  const fits = (trip: TripView) => trip.has_typed_order || suitsProfile(trip);
 
   const offers = proposed.filter(fits);
   const hidden = proposed.length - offers.length;
@@ -315,6 +326,7 @@ export function DriverConsole({
                 <ProposalCard
                   key={trip.id}
                   trip={trip}
+                  suitsProfile={suitsProfile(trip)}
                   price={priceOf[trip.id] ?? 0}
                   selected={selected?.id === trip.id}
                   onSelect={() => setSelectedId(trip.id)}
@@ -372,11 +384,14 @@ function ProposalCard({
   price,
   selected,
   onSelect,
+  suitsProfile = true,
 }: {
   trip: TripView;
   price: number;
   selected: boolean;
   onSelect: () => void;
+  /** False when the trip is shown only because it carries the visitor's order. */
+  suitsProfile?: boolean;
 }) {
   const { run, busy, error, refresh } = useAction();
   const orderCount = new Set(trip.stops.map((s) => s.order_id).filter(Boolean)).size;
@@ -394,10 +409,13 @@ function ProposalCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             {trip.has_typed_order ? (
-              <div className="mb-1.5">
+              <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
                 <Badge tone="accent" dot>
                   Здесь ваша заявка
                 </Badge>
+                {!suitsProfile ? (
+                  <Badge tone="warn">не под ваш кузов</Badge>
+                ) : null}
               </div>
             ) : null}
             <div className="text-[0.9375rem] font-semibold leading-snug text-ink-900">{summary}</div>
@@ -434,6 +452,13 @@ function ProposalCard({
         <p className="mt-3 rounded-control bg-ink-50 px-3 py-2.5 text-small text-ink-600">
           {trip.explanation}
         </p>
+
+        {trip.revenue_kzt < fuelCost ? (
+          <p className="mt-2 rounded-control bg-warn-soft px-3 py-2 text-[0.6875rem] text-warn">
+            Заказчики предлагают меньше, чем стоит топливо. Попутного груза для этой заявки
+            сейчас нет — это отдельный выезд. Нажмите «Своя цена» и назовите свою.
+          </p>
+        ) : null}
 
         <p className="mt-2 text-[0.6875rem] text-ink-500">
           Телефоны отправителей откроются, как только вы возьмёте рейс.
