@@ -413,6 +413,8 @@ interface PriceFloor {
   price_kzt: number;
   /** Cost of a run made for this load alone — what a lone shipper is buying. */
   dedicated_kzt: number;
+  /** Body the floor was priced against, when the shipper demanded one. */
+  for_kind?: "tent" | "refrigerator" | "flatbed" | "tipper" | null;
   fuel_l: number;
   /** Truck class the floor assumes: the smallest one the cargo fits into. */
   capacity_kg: number;
