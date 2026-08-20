@@ -29,39 +29,110 @@ const KIND: Record<TripView["kind"], { label: string; tone: "laden" | "accent" |
 function tripArcs(trip: TripView): MapArc[] {
   const arcs: MapArc[] = [];
   let at: [number, number] = [trip.at_lat, trip.at_lon];
+  let atName = trip.at_name;
   let load = 0;
+  let aboard: string[] = [];
 
   trip.stops.forEach((stop, index) => {
     const to: [number, number] = [stop.lat, stop.lon];
     if (at[0] !== to[0] || at[1] !== to[1]) {
-      arcs.push({ id: `${trip.id}-leg-${index}`, from: at, to, laden: load > 0, weight: 0.5 });
+      // Naming both ends and what is in the body makes the leg readable on its
+      // own. A line whose only property is a colour leaves the viewer guessing
+      // which way the truck is going and why that stretch is paid.
+      const cargoNote = aboard.length > 0 ? `в кузове: ${aboard.join(", ")}` : "порожний";
+      arcs.push({
+        id: `${trip.id}-leg-${index}`,
+        from: at,
+        to,
+        laden: load > 0,
+        weight: 0.5,
+        arrow: true,
+        label: `${atName} → ${stop.settlement_name} · ${cargoNote}`,
+      });
     }
-    load += (stop.action === "pickup" ? 1 : -1) * (stop.weight_kg ?? 0);
+
+    if (stop.action === "pickup") {
+      load += stop.weight_kg ?? 0;
+      if (stop.cargo) aboard.push(stop.cargo);
+    } else {
+      load -= stop.weight_kg ?? 0;
+      aboard = aboard.filter((cargo) => cargo !== stop.cargo);
+    }
     at = to;
+    atName = stop.settlement_name;
   });
 
   const home: [number, number] = [trip.at_lat, trip.at_lon];
   if (at[0] !== home[0] || at[1] !== home[1]) {
-    arcs.push({ id: `${trip.id}-leg-return`, from: at, to: home, laden: false, weight: 0.5 });
+    arcs.push({
+      id: `${trip.id}-leg-return`,
+      from: at,
+      to: home,
+      laden: false,
+      weight: 0.5,
+      arrow: true,
+      label: `${atName} → ${trip.at_name} · возврат на базу, порожний`,
+    });
   }
   return arcs;
 }
 
+/**
+ * One pin per settlement on the route, not one per stop.
+ *
+ * A trip picks up two consignments in the same town often enough, and two labels
+ * stacked on one dot read as a rendering fault. Stops at the same place are
+ * merged, keeping their numbers so the order is still legible: "2–3 Бейнеу".
+ */
 function tripPins(trip: TripView): MapPin[] {
-  const pins: MapPin[] = [
-    { id: `${trip.id}-vehicle`, lat: trip.at_lat, lon: trip.at_lon, kind: "vehicle", label: trip.plate },
-  ];
+  const bySettlement = new Map<string, { stops: TripStopView[]; lat: number; lon: number }>();
   for (const stop of trip.stops) {
+    const entry = bySettlement.get(stop.settlement_id);
+    if (entry) entry.stops.push(stop);
+    else bySettlement.set(stop.settlement_id, { stops: [stop], lat: stop.lat, lon: stop.lon });
+  }
+
+  const pins: MapPin[] = [
+    {
+      id: `${trip.id}-vehicle`,
+      lat: trip.at_lat,
+      lon: trip.at_lon,
+      kind: "vehicle",
+      label: `Старт · ${trip.plate}`,
+      permanentLabel: true,
+    },
+  ];
+
+  for (const [settlementId, entry] of bySettlement) {
+    const seqs = entry.stops.map((s) => s.seq).sort((a, b) => a - b);
+    const numbers = seqs.length > 2 ? `${seqs[0]}–${seqs[seqs.length - 1]}` : seqs.join("–");
+    const actions = new Set(entry.stops.map((s) => s.action));
+    // A place where the truck both drops and collects is the interesting case —
+    // that is consolidation happening, and it should not be hidden behind one word.
+    const what =
+      actions.size === 2
+        ? "выгрузка и погрузка"
+        : actions.has("pickup")
+          ? "забрать"
+          : "выгрузить";
+
     pins.push({
-      id: stop.id,
-      lat: stop.lat,
-      lon: stop.lon,
-      kind: stop.action,
-      seq: stop.seq,
-      label: `${stop.seq}. ${stop.settlement_name} — ${stop.action === "pickup" ? "забрать" : "выгрузить"}`,
+      id: `${trip.id}-stop-${settlementId}`,
+      lat: entry.lat,
+      lon: entry.lon,
+      kind: actions.has("pickup") ? "pickup" : "dropoff",
+      seq: seqs[0],
+      label: `${numbers} · ${entry.stops[0]!.settlement_name} — ${what}`,
+      permanentLabel: true,
     });
   }
+
   return pins;
+}
+
+/** Settlements the route already names, so the map does not print them twice. */
+function tripNamedSettlements(trip: TripView): string[] {
+  return [...new Set(trip.stops.map((stop) => stop.settlement_id))];
 }
 
 function stopsForTimeline(stops: TripStopView[]) {
@@ -162,9 +233,13 @@ export function DriverConsole({
   const selected = shown.find((trip) => trip.id === selectedId) ?? shown[0] ?? null;
   const { run, busy, error } = useAction();
 
-  const { arcs, pins } = useMemo(() => {
-    if (!selected) return { arcs: [] as MapArc[], pins: [] as MapPin[] };
-    return { arcs: tripArcs(selected), pins: tripPins(selected) };
+  const { arcs, pins, named } = useMemo(() => {
+    if (!selected) return { arcs: [] as MapArc[], pins: [] as MapPin[], named: [] as string[] };
+    return {
+      arcs: tripArcs(selected),
+      pins: tripPins(selected),
+      named: tripNamedSettlements(selected),
+    };
   }, [selected]);
 
   return (
@@ -230,7 +305,7 @@ export function DriverConsole({
 
       {/* Map */}
       <div className="relative h-[45vh] w-full lg:h-auto lg:flex-1">
-        <MapPanel settlements={settlements} arcs={arcs} pins={pins} labels />
+        <MapPanel settlements={settlements} arcs={arcs} pins={pins} namedElsewhere={named} labels />
         {selected ? <MapLegend trip={selected} /> : null}
       </div>
     </div>
@@ -704,9 +779,19 @@ function MapLegend({ trip }: { trip: TripView }) {
         <span className="flex items-center gap-1.5 text-empty-ink">
           <span className="h-0.5 w-5 rounded border-t-2 border-dashed border-empty-ink" /> порожний
         </span>
+        <span className="flex items-center gap-1.5 text-ink-600">
+          <svg width="14" height="9" viewBox="0 0 14 9" fill="none" aria-hidden>
+            <path d="M1 4.5h9M7.5 1.5 10.5 4.5 7.5 7.5" stroke="currentColor" strokeWidth="1.6"
+                  strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          куда едет
+        </span>
       </div>
       <div className="mt-1.5 tnum text-[0.6875rem] text-ink-500">
         {km(trip.total_km)} · порожний {km(trip.empty_km)} · оплачиваемых {percent(trip.paid_km_share)}
+      </div>
+      <div className="mt-1 text-[0.6875rem] text-ink-500">
+        Цифры у точек — порядок остановок. Наведите на линию — покажет, что в кузове.
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { CircleMarker, GeoJSON, MapContainer, Polyline, Tooltip, useMap } from "react-leaflet";
 import type { Feature, MultiPolygon } from "geojson";
 import type { LatLngBoundsExpression } from "leaflet";
@@ -25,6 +25,14 @@ export interface MapArc {
   /** Relative importance, 0–1, mapped to stroke width. */
   weight?: number;
   label?: string;
+  /**
+   * Draw a chevron at the midpoint pointing the way the truck travels.
+   *
+   * Colour already carries whether a leg is paid or empty, which is the point of
+   * the product and not something to give up. Direction is a second, orthogonal
+   * fact, so it gets its own mark instead of a second colour scheme.
+   */
+  arrow?: boolean;
 }
 
 export interface MapPin {
@@ -34,6 +42,8 @@ export interface MapPin {
   kind: "pickup" | "dropoff" | "vehicle";
   label?: string;
   seq?: number;
+  /** Keep the label on screen without hovering. Route stops need this. */
+  permanentLabel?: boolean;
 }
 
 const REGION = regionOutline as unknown as Feature<MultiPolygon>;
@@ -100,6 +110,38 @@ function arcPoints(
   return points;
 }
 
+/**
+ * A chevron at the arc's midpoint, pointing along the direction of travel.
+ *
+ * Built from the arc's own points so it follows the curve rather than the
+ * straight line between endpoints. Sized in degrees of latitude, which is crude
+ * but stable at this region's single zoom range.
+ */
+function chevron(points: [number, number][]): [number, number][][] {
+  const mid = Math.floor(points.length / 2);
+  const [aLat, aLon] = points[mid - 1] ?? points[0]!;
+  const [bLat, bLon] = points[mid + 1] ?? points[points.length - 1]!;
+
+  const dLat = bLat - aLat;
+  const dLon = bLon - aLon;
+  const len = Math.hypot(dLat, dLon) || 1;
+  const ux = dLat / len;
+  const uy = dLon / len;
+
+  const tip = points[mid]!;
+  const size = 0.085;
+  // Two barbs swept back from the tip at roughly 35°.
+  const back = 0.82;
+  const side = 0.55;
+  return [
+    [
+      [tip[0] - size * (ux * back + uy * side), tip[1] - size * (uy * back - ux * side)],
+      tip,
+      [tip[0] - size * (ux * back - uy * side), tip[1] - size * (uy * back + ux * side)],
+    ],
+  ];
+}
+
 function settlementRadius(place: MapSettlement["place"], population: number | null): number {
   if (place === "city") return population && population > 150000 ? 9 : 7;
   if (place === "town") return 5.5;
@@ -130,6 +172,13 @@ export interface RegionMapProps {
   focusArcIds?: string[];
   /** Show settlement names for cities and towns. */
   labels?: boolean;
+  /**
+   * Settlements already named by a route label.
+   *
+   * Without this the map printed a name twice in the same spot — once as the
+   * region's own label, once as the trip's stop — which read as a rendering bug.
+   */
+  namedElsewhere?: string[];
   className?: string;
   onSelectSettlement?: (id: string) => void;
 }
@@ -140,6 +189,7 @@ export default function RegionMap({
   pins = [],
   focusArcIds,
   labels = true,
+  namedElsewhere,
   className = "h-full w-full",
   onSelectSettlement,
 }: RegionMapProps) {
@@ -175,24 +225,44 @@ export default function RegionMap({
         {arcs.map((arc) => {
           const dimmed = focused !== null && !focused.has(arc.id);
           const width = 1.25 + (arc.weight ?? 0.35) * 4;
+          const points = arcPoints(arc.from, arc.to);
+          const colour = arc.laden ? "#0E8A6F" : "#C2560D";
           return (
-            <Polyline
-              key={arc.id}
-              positions={arcPoints(arc.from, arc.to)}
-              pathOptions={{
-                color: arc.laden ? "#0E8A6F" : "#C2560D",
-                weight: dimmed ? 1 : width,
-                opacity: dimmed ? 0.14 : arc.laden ? 0.9 : 0.75,
-                dashArray: arc.laden ? undefined : "5 6",
-                lineCap: "round",
-              }}
-            >
-              {arc.label ? (
-                <Tooltip sticky>
-                  <span className="text-[11px]">{arc.label}</span>
-                </Tooltip>
-              ) : null}
-            </Polyline>
+            <Fragment key={arc.id}>
+              <Polyline
+                positions={points}
+                pathOptions={{
+                  color: colour,
+                  weight: dimmed ? 1 : width,
+                  opacity: dimmed ? 0.14 : arc.laden ? 0.9 : 0.75,
+                  dashArray: arc.laden ? undefined : "5 6",
+                  lineCap: "round",
+                }}
+              >
+                {arc.label ? (
+                  <Tooltip sticky>
+                    <span className="text-[11px] leading-snug">{arc.label}</span>
+                  </Tooltip>
+                ) : null}
+              </Polyline>
+
+              {arc.arrow && !dimmed
+                ? chevron(points).map((barbs, index) => (
+                    <Polyline
+                      key={`${arc.id}-arrow-${index}`}
+                      positions={barbs}
+                      interactive={false}
+                      pathOptions={{
+                        color: colour,
+                        weight: Math.max(2, width - 0.5),
+                        opacity: 1,
+                        lineCap: "round",
+                        lineJoin: "round",
+                      }}
+                    />
+                  ))
+                : null}
+            </Fragment>
           );
         })}
 
@@ -241,14 +311,20 @@ export default function RegionMap({
             }}
           >
             {pin.label ? (
-              <Tooltip direction="top" offset={[0, -6]} permanent={pin.kind === "vehicle"}>
-                <span className="text-[11px]">{pin.label}</span>
+              <Tooltip
+                direction="top"
+                offset={[0, -7]}
+                permanent={pin.permanentLabel ?? pin.kind === "vehicle"}
+              >
+                <span className="whitespace-nowrap text-[11px] font-medium">{pin.label}</span>
               </Tooltip>
             ) : null}
           </CircleMarker>
         ))}
 
-        {labels ? <SettlementLabels settlements={settlements} /> : null}
+        {labels ? (
+          <SettlementLabels settlements={settlements} skip={namedElsewhere} />
+        ) : null}
       </MapContainer>
     </div>
   );
@@ -260,9 +336,16 @@ export default function RegionMap({
  * Leaflet has no label engine, so these are permanent tooltips on invisible
  * markers — cheap, and enough for seven names.
  */
-function SettlementLabels({ settlements }: { settlements: MapSettlement[] }) {
+function SettlementLabels({
+  settlements,
+  skip,
+}: {
+  settlements: MapSettlement[];
+  skip?: string[];
+}) {
+  const hidden = new Set(skip ?? []);
   const named = settlements
-    .filter((s) => s.place === "city" || s.place === "town")
+    .filter((s) => (s.place === "city" || s.place === "town") && !hidden.has(s.id))
     .slice(0, 8);
 
   return (
