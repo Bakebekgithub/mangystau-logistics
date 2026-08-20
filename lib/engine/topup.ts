@@ -127,7 +127,7 @@ function rank(
     if (order.status !== "new") continue;
     if (order.weight_kg > capacityKg) continue;
     if (order.needs_cooling && request.kind !== "refrigerator") continue;
-    if (!bodyFitsCargo(request.kind, order.cargo)) continue;
+    if (!bodyFitsCargo(request.kind, order.cargo, order.needs_cooling)) continue;
     if (new Date(order.deadline_at) < request.now) continue;
 
     const detour_km = detourFor(dist, from, to, order);

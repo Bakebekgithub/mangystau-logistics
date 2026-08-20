@@ -18,11 +18,16 @@ describe("cargo and body", () => {
     assert.equal(bodyFitsCargo("tipper", "мебель"), false);
   });
 
-  it("keeps bulk and steel out of a reefer", () => {
+  it("offers a reefer nothing but cold cargo", () => {
     assert.equal(bodyFitsCargo("refrigerator", "рыба"), true);
     assert.equal(bodyFitsCargo("refrigerator", "медикаменты"), true);
     assert.equal(bodyFitsCargo("refrigerator", "кирпич"), false);
     assert.equal(bodyFitsCargo("refrigerator", "арматура"), false);
+    // Physically possible, economically wrong: the most expensive truck in the
+    // fleet should not be sent after freight a tarpaulin body can carry.
+    assert.equal(bodyFitsCargo("refrigerator", "запчасти"), false);
+    assert.equal(bodyFitsCargo("refrigerator", "шерсть"), false);
+    assert.equal(bodyFitsCargo("refrigerator", "питьевая вода"), false);
   });
 
   it("keeps food off an open flatbed", () => {
@@ -57,6 +62,14 @@ describe("cargo and body", () => {
     assert.equal(classifyCargo("солома"), "general");
     assert.equal(classifyCargo("фасоль"), "general");
     assert.equal(classifyCargo("металлолом"), "bulk");
+  });
+
+  it("sends anything flagged for cold to a reefer, whatever it is called", () => {
+    // The shipper's own requirement beats the keyword list: without this, an
+    // order marked for cold but described as "запчасти" fitted no body at all.
+    assert.equal(bodyFitsCargo("refrigerator", "запчасти", true), true);
+    assert.equal(bodyFitsCargo("tent", "запчасти", true), false);
+    assert.equal(bodyFitsCargo("flatbed", "продукты питания", true), false);
   });
 
   it("treats anything unfamiliar as packaged goods", () => {

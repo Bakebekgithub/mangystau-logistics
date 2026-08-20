@@ -235,7 +235,7 @@ export type Role = "shipper" | "driver" | "akimat";
 const ROLE_TABS: { key: Role; href: string; label: string }[] = [
   { key: "shipper", href: "/shipper", label: "Отправитель" },
   { key: "driver", href: "/driver", label: "Перевозчик" },
-  { key: "akimat", href: "/akimat", label: "Диспетчер" },
+  { key: "akimat", href: "/akimat", label: "Область" },
 ];
 
 export function TopBar({ current }: { current?: Role }) {

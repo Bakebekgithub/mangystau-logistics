@@ -53,7 +53,7 @@ function isServiceable(order: Order, vehicle: Vehicle, now: Date, dist: Distance
   // Weight and cold are not the only constraints on a body. A tipper cannot take
   // bottled water and a reefer has no business carrying bricks; planning such a
   // trip only produces an offer no carrier can accept.
-  if (!bodyFitsCargo(vehicle.kind, order.cargo)) return false;
+  if (!bodyFitsCargo(vehicle.kind, order.cargo, order.needs_cooling)) return false;
   if (new Date(order.deadline_at) < now) return false;
   // A pair with no known road distance cannot be costed, so it is not offered.
   return (

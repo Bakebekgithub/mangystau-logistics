@@ -70,35 +70,55 @@ export function classifyCargo(cargo: string): CargoClass {
 }
 
 /**
- * What each body is willing to carry.
+ * What each body is offered.
  *
- * - Reefer: cold cargo, and packaged goods when there is no cold load — but
- *   never sand or rebar, which would wreck the insulation.
+ * - Reefer: cold cargo only.
  * - Tent: the workhorse. A closed body takes food, packaged goods and long
  *   freight; nothing poured loose, because it cannot be tipped out.
  * - Flatbed: open platform. Long and loose freight; no food, no boxes in rain.
  * - Tipper: loose freight only. It tips — that is the whole point of it.
  *
- * Food is not reefer-only: a closed tarpaulin body carries vegetables and
- * packaged groceries perfectly well. Whether a given consignment actually needs
- * cold is a separate property of the order, checked separately — conflating the
- * two here would leave most of the region's food with no truck at all.
+ * The reefer restriction is economic, not physical. A refrigerated truck can of
+ * course carry wool or spare parts, and in practice it does when there is no
+ * chilled load. But it burns 21 l/100 km against 14–18 for a tarpaulin truck, so
+ * offering it dry freight means proposing the most expensive vehicle in the fleet
+ * for a job a cheaper one should do. The platform exists to allocate the fleet
+ * well; sending a fridge after a pallet of spare parts is the opposite.
+ *
+ * Food, on the other hand, is not reefer-only: a closed tarpaulin body carries
+ * vegetables and packaged groceries perfectly well. Whether a consignment
+ * actually needs cold is a separate property of the order, checked separately —
+ * conflating the two would leave most of the region's food with no truck at all.
  */
 const BODY_ACCEPTS: Record<VehicleKind, readonly CargoClass[]> = {
-  refrigerator: ["perishable", "general"],
+  refrigerator: ["perishable"],
   tent: ["perishable", "general", "heavy"],
   flatbed: ["heavy", "bulk"],
   tipper: ["bulk"],
 };
 
-/** Whether this body can carry this consignment at all. */
-export function bodyFitsCargo(kind: VehicleKind, cargo: string): boolean {
+/**
+ * Whether this consignment should be offered to this body.
+ *
+ * `needsCooling` overrides the keyword classification, and has to. A shipper who
+ * ticks "нужен рефрижератор" has told us the cargo is perishable whatever they
+ * called it, and without this an order flagged for cold but described as
+ * "запчасти" fitted nothing at all: the tent refused it on temperature and the
+ * reefer on cargo class. Stating the requirement outright beats guessing from a
+ * word list.
+ */
+export function bodyFitsCargo(
+  kind: VehicleKind,
+  cargo: string,
+  needsCooling = false,
+): boolean {
+  if (needsCooling) return kind === "refrigerator";
   return BODY_ACCEPTS[kind].includes(classifyCargo(cargo));
 }
 
 /** Human-readable, for the carrier's screen and the methodology page. */
 export const BODY_ACCEPTS_LABEL: Record<VehicleKind, string> = {
-  refrigerator: "скоропорт и упакованные грузы",
+  refrigerator: "только скоропортящиеся грузы",
   tent: "продукты, упакованные и длинномерные грузы",
   flatbed: "длинномерные и навалочные грузы",
   tipper: "только навалочные грузы",
