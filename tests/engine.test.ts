@@ -234,3 +234,40 @@ describe("savings arithmetic", () => {
     assert.equal(savings.share_of_baseline, 0);
   });
 });
+
+describe("three small consignments from one hub", () => {
+  /**
+   * The product's headline claim, as a test.
+   *
+   * Real distances from the region: Aktau→Senek is the long haul at 200 km, and
+   * Kuryk and Zhetybay sit near that corridor. A single run must beat three.
+   */
+  const hub = buildDistanceTable([
+    { from_id: "aktau", to_id: "senek", km: 200, minutes: 150 },
+    { from_id: "aktau", to_id: "kuryk", km: 71, minutes: 60 },
+    { from_id: "aktau", to_id: "zhetybay", km: 93, minutes: 75 },
+    { from_id: "senek", to_id: "kuryk", km: 180, minutes: 140 },
+    { from_id: "senek", to_id: "zhetybay", km: 126, minutes: 100 },
+    { from_id: "kuryk", to_id: "zhetybay", km: 51, minutes: 45 },
+  ]);
+
+  const orders = [
+    order({ id: "c1", origin_id: "aktau", destination_id: "senek", weight_kg: 400 }),
+    order({ id: "c2", origin_id: "aktau", destination_id: "kuryk", weight_kg: 700 }),
+    order({ id: "c3", origin_id: "aktau", destination_id: "zhetybay", weight_kg: 300 }),
+  ];
+
+  test("all three go into one trip, not three", () => {
+    const [best] = proposeTrips(truck({ capacity_kg: 5000 }), orders, hub, (id) => id, options);
+    assert.ok(best, "expected a proposal");
+    assert.equal(best.order_ids.length, 3, `expected one trip with all three, got ${best.order_ids.length}`);
+    assert.equal(best.kind, "consolidation");
+  });
+
+  test("and that trip is shorter than three separate runs", () => {
+    const [best] = proposeTrips(truck({ capacity_kg: 5000 }), orders, hub, (id) => id, options);
+    // Separately: 2×(200 + 71 + 93) = 728 km.
+    assert.equal(best!.baseline_total_km, 728);
+    assert.ok(best!.total_km < 500, `expected well under 500 km, got ${best!.total_km}`);
+  });
+});

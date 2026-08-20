@@ -155,10 +155,16 @@ export async function proposeAcrossFleet(
   // too slow to sit behind a web request.
   const cache = new Map<string, TripPlan[]>();
 
-  /** Kilometres avoided, with customer orders lifted above the modelled pool. */
+  /**
+   * Kilometres avoided, with customer orders lifted above the modelled pool.
+   *
+   * The bonus counts orders rather than merely detecting one. A flat bonus made
+   * every plan holding a single customer order look equally good, so three
+   * consignments a person had just placed were served by three separate trucks —
+   * the exact opposite of what this product is for.
+   */
   const score = (plan: TripPlan) =>
-    savingOf(plan) +
-    (plan.order_ids.some((id) => typed.has(id)) ? TYPED_PRIORITY_KM : 0);
+    savingOf(plan) + plan.order_ids.filter((id) => typed.has(id)).length * TYPED_PRIORITY_KM;
 
   while (unassigned.size > 0 && pool.length > 0) {
     let best: { vehicle: Vehicle; plans: TripPlan[] } | null = null;
