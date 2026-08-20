@@ -359,6 +359,8 @@ interface PriceFloor {
   km: number;
   price_kzt: number;
   fuel_l: number;
+  /** Truck class the floor assumes: the smallest one the cargo fits into. */
+  capacity_kg: number;
   charged_share: number;
 }
 
