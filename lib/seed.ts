@@ -122,8 +122,9 @@ const VEHICLE_CLASSES: readonly VehicleClass[] = [
   { kind: "tent", capacity_kg: 3000, fuel_per_100km: 14, weight: 3 },
   { kind: "tent", capacity_kg: 5000, fuel_per_100km: 18, weight: 4 },
   { kind: "tent", capacity_kg: 10000, fuel_per_100km: 22, weight: 3 },
-  { kind: "flatbed", capacity_kg: 12000, fuel_per_100km: 25, weight: 2 },
-  { kind: "tipper", capacity_kg: 15000, fuel_per_100km: 28, weight: 1 },
+  { kind: "flatbed", capacity_kg: 12000, fuel_per_100km: 25, weight: 3 },
+  { kind: "tipper", capacity_kg: 8000, fuel_per_100km: 24, weight: 3 },
+  { kind: "tipper", capacity_kg: 15000, fuel_per_100km: 28, weight: 2 },
   { kind: "refrigerator", capacity_kg: 5000, fuel_per_100km: 21, weight: 2 },
 ];
 
