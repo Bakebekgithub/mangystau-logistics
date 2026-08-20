@@ -291,10 +291,10 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
                   <p className="mt-1.5">
                     Топливо на груженое плечо{" "}
                     <span className="tnum">
-                      {floor.fuel_l.toFixed(0)} л × {ASSUMPTIONS.dieselPriceKztPerL} ₸
+                      {floor.fuel_l.toFixed(1)} л × {ASSUMPTIONS.dieselPriceKztPerL} ₸
                     </span>{" "}
-                    делим на {ASSUMPTIONS.fuelShareOfOperatingCost} — долю топлива в затратах перевозчика.
-                    Ниже этой суммы он едет в убыток.
+                    делим на {ASSUMPTIONS.fuelShareOfOperatingCost} — долю топлива в затратах
+                    перевозчика — и округляем до 500. Ниже этой суммы он едет в убыток.
                   </p>
                   <p className="mt-1.5">
                     Это не тариф: цену ставите вы, перевозчик соглашается или предлагает свою.
