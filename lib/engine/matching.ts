@@ -165,7 +165,7 @@ function optimizeSequence(
 }
 
 /** Which story this plan tells, which decides how the UI presents it. */
-function classify(anchor: Order, extras: Order[], dist: DistanceTable): TripPlan["kind"] {
+export function classify(anchor: Order, extras: Order[], dist: DistanceTable): TripPlan["kind"] {
   if (extras.length === 0) return "single";
 
   const isBackhaul = (o: Order) =>
@@ -181,7 +181,7 @@ function classify(anchor: Order, extras: Order[], dist: DistanceTable): TripPlan
   return "consolidation";
 }
 
-function explain(
+export function explain(
   kind: TripPlan["kind"],
   plan: Omit<TripPlan, "explanation">,
   orderCount: number,

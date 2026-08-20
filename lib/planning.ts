@@ -10,6 +10,7 @@
 import { getDb } from "./db.ts";
 import { loadContext, proposeAcrossFleet } from "./dispatch.ts";
 import { baselineForOrders, evaluateRoute, savingsAgainstBaseline } from "./engine/economics.ts";
+import { classify, explain } from "./engine/matching.ts";
 import type { Order, TripPlan, TripStop, Vehicle } from "./types.ts";
 
 function newId(prefix: string): string {
@@ -296,16 +297,45 @@ export async function dropOrderFromTrip(
     fuel_per_100km: Number(vehicle.fuel_per_100km),
   };
 
-  const { dist } = await loadContext();
+  const { dist, nameOf } = await loadContext();
   const route = evaluateRoute(typedVehicle, resequenced, orders, dist);
   const baseline = baselineForOrders([...orders.values()], typedVehicle, dist);
   const savings = savingsAgainstBaseline(route, baseline);
+
+  // The explanation is recomputed too. Leaving the old sentence in place left a
+  // card claiming 100% paid kilometres above a bar that read 94% — the sort of
+  // contradiction a judge notices before anything else.
+  const anchorOrder = orders.get(resequenced[0]!.order_id)!;
+  const extras = [...orders.values()].filter((o) => o.id !== anchorOrder.id);
+  const kind = classify(anchorOrder, extras, dist);
+  const explanation = explain(
+    kind,
+    {
+      vehicle_id: typedVehicle.id,
+      stops: resequenced,
+      order_ids: [...orders.keys()],
+      kind,
+      total_km: route.total_km,
+      laden_km: route.laden_km,
+      empty_km: route.empty_km,
+      baseline_total_km: baseline.total_km,
+      baseline_empty_km: baseline.empty_km,
+      fuel_l: route.fuel_l,
+      fuel_saved_l: savings.fuel_saved_l,
+      money_saved_kzt: savings.money_saved_kzt,
+      paid_km_share: route.paid_km_share,
+      minutes: route.minutes,
+    },
+    orders.size,
+    nameOf,
+  );
 
   await db.query(
     `UPDATE trips SET total_km = $2, laden_km = $3, empty_km = $4,
             baseline_total_km = $5, baseline_empty_km = $6,
             fuel_l = $7, fuel_saved_l = $8, money_saved_kzt = $9,
-            paid_km_share = $10, minutes = $11
+            paid_km_share = $10, minutes = $11,
+            kind = $12, explanation = $13
      WHERE id = $1`,
     [
       tripId,
@@ -319,6 +349,8 @@ export async function dropOrderFromTrip(
       savings.money_saved_kzt,
       route.paid_km_share,
       route.minutes,
+      kind,
+      explanation,
     ],
   );
 
