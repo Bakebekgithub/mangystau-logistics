@@ -68,12 +68,15 @@ export default async function ShipperPage() {
                 // something that will never happen.
                 const floor =
                   order.km !== null ? recommendedOrderPriceKzt(order.km, order.weight_kg).price_kzt : null;
+                const waiting = order.status === "new" && !order.carrier_plate;
                 const underpriced =
-                  order.status === "new" &&
-                  !order.carrier_plate &&
+                  waiting &&
                   floor !== null &&
                   order.offered_price_kzt !== null &&
                   order.offered_price_kzt < floor;
+                // Asking for a specific body narrows the region's fleet to a
+                // handful of trucks. Saying so beats an indefinite "ищем машину".
+                const narrowedByBody = waiting && !underpriced && order.required_kind !== null;
                 return (
                   <Surface key={order.id} interactive className="animate-rise p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -128,6 +131,14 @@ export default async function ShipperPage() {
                         Перевозчики не берут: ваша цена ниже рекомендованного минимума{" "}
                         <span className="tnum font-semibold">{kzt(floor)}</span>. Ниже неё рейс
                         не окупает даже топливо, поэтому движок его не предлагает.
+                      </div>
+                    ) : null}
+
+                    {narrowedByBody && order.required_kind ? (
+                      <div className="mt-2.5 rounded-control border border-ink-200 bg-ink-50 px-3 py-2.5 text-small text-ink-600">
+                        Вы просили только {BODY_LABEL[order.required_kind]}. Машин этого типа
+                        в области немного, и свободной пока нет — уберите ограничение,
+                        и мы подберём любую подходящую.
                       </div>
                     ) : null}
 
