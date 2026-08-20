@@ -188,7 +188,7 @@ export async function proposeAcrossFleet(
       const km = context.dist.has(order.origin_id, order.destination_id)
         ? context.dist.km(order.origin_id, order.destination_id)
         : 0;
-      return [order.id, recommendedOrderPriceKzt(km, order.weight_kg).price_kzt] as const;
+      return [order.id, recommendedOrderPriceKzt(km, order.weight_kg, order.required_kind).price_kzt] as const;
     }),
   );
 

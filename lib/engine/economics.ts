@@ -15,7 +15,7 @@
  * the region works today.
  */
 
-import type { DistanceTable, Order, TripStop, Vehicle } from "../types.ts";
+import type { DistanceTable, Order, TripStop, Vehicle, VehicleKind } from "../types.ts";
 
 export const ASSUMPTIONS = {
   /**
@@ -90,6 +90,11 @@ export const ASSUMPTIONS = {
   settlementSource: "OpenStreetMap, 65 населённых пунктов Мангистауской области, ODbL",
 } as const;
 
+interface PricingClass {
+  capacity_kg: number;
+  fuel_per_100km: number;
+}
+
 /**
  * Reference truck classes for pricing, mirroring the fleet in lib/seed.ts.
  *
@@ -97,12 +102,35 @@ export const ASSUMPTIONS = {
  * the smallest class that can carry the consignment. A larger truck actually
  * showing up does not change what the shipper was quoted.
  */
-const PRICING_CLASSES: readonly { capacity_kg: number; fuel_per_100km: number }[] = [
+const PRICING_CLASSES: readonly PricingClass[] = [
   { capacity_kg: 3000, fuel_per_100km: 14 },
   { capacity_kg: 5000, fuel_per_100km: 18 },
   { capacity_kg: 10000, fuel_per_100km: 22 },
   { capacity_kg: 15000, fuel_per_100km: 28 },
 ];
+
+/**
+ * Per-body classes, used when the shipper insists on a body type.
+ *
+ * A recommendation has to be for the truck that will actually come. Quoting a
+ * three-tonne tarpaulin truck to someone who demanded a refrigerator understates
+ * the floor badly — a reefer burns 21 l/100 km against 14 and its smallest body
+ * is five tonnes — and then the shipper pays the number we gave them and waits
+ * for a carrier who cannot afford to come.
+ */
+const PRICING_CLASSES_BY_KIND: Record<VehicleKind, readonly PricingClass[]> = {
+  tent: [
+    { capacity_kg: 3000, fuel_per_100km: 14 },
+    { capacity_kg: 5000, fuel_per_100km: 18 },
+    { capacity_kg: 10000, fuel_per_100km: 22 },
+  ],
+  refrigerator: [{ capacity_kg: 5000, fuel_per_100km: 21 }],
+  flatbed: [{ capacity_kg: 12000, fuel_per_100km: 25 }],
+  tipper: [
+    { capacity_kg: 8000, fuel_per_100km: 24 },
+    { capacity_kg: 15000, fuel_per_100km: 28 },
+  ],
+};
 
 /**
  * The smallest share of a truck a consignment is charged for.
@@ -117,6 +145,8 @@ const MIN_CHARGED_SHARE = 0.3;
 export interface PriceRecommendation {
   /** The floor, in tenge, rounded to 500. */
   price_kzt: number;
+  /** Body the floor was priced against, when the shipper demanded one. */
+  for_kind?: VehicleKind | null;
   /** Litres the loaded leg burns — what the number is built from. */
   fuel_l: number;
   /** Truck class the recommendation assumes. */
@@ -135,10 +165,13 @@ export interface PriceRecommendation {
  * carrier drives at a loss. Above it, the two sides negotiate, exactly as they
  * do on the phone today; the shipper types the number.
  */
-export function recommendedOrderPriceKzt(km: number, weightKg: number): PriceRecommendation {
-  const cls =
-    PRICING_CLASSES.find((c) => c.capacity_kg >= weightKg) ??
-    PRICING_CLASSES[PRICING_CLASSES.length - 1]!;
+export function recommendedOrderPriceKzt(
+  km: number,
+  weightKg: number,
+  requiredKind?: VehicleKind | null,
+): PriceRecommendation {
+  const ladder = requiredKind ? PRICING_CLASSES_BY_KIND[requiredKind] : PRICING_CLASSES;
+  const cls = ladder.find((c) => c.capacity_kg >= weightKg) ?? ladder[ladder.length - 1]!;
 
   // Cost of dedicating the truck to this leg, fully loaded.
   const per100Laden = cls.fuel_per_100km * (1 + ASSUMPTIONS.ladenSurchargeAtFullLoad);
@@ -152,7 +185,34 @@ export function recommendedOrderPriceKzt(km: number, weightKg: number): PriceRec
     fuel_l: round1(fullLegLitres * share),
     capacity_kg: cls.capacity_kg,
     charged_share: round3(share),
+    for_kind: requiredKind ?? null,
   };
+}
+
+/**
+ * What it costs to fetch one consignment on a trip of its own.
+ *
+ * The recommended floor assumes the consignment shares a truck — that is the
+ * whole product. But a small load in a remote settlement may have nobody to
+ * share with, and then the honest price is a dedicated run: out loaded, back
+ * empty, whole truck. Shown beside the floor so a shipper waiting in vain can
+ * see the difference between "cheap if someone passes" and "this is what it
+ * costs if nobody does".
+ */
+export function dedicatedTripPriceKzt(
+  km: number,
+  weightKg: number,
+  requiredKind?: VehicleKind | null,
+): number {
+  const ladder = requiredKind ? PRICING_CLASSES_BY_KIND[requiredKind] : PRICING_CLASSES;
+  const cls = ladder.find((c) => c.capacity_kg >= weightKg) ?? ladder[ladder.length - 1]!;
+
+  const loadFraction = Math.min(1, weightKg / cls.capacity_kg);
+  const ladenPer100 = cls.fuel_per_100km * (1 + ASSUMPTIONS.ladenSurchargeAtFullLoad * loadFraction);
+  // Loaded there, empty back. The whole run is on this one consignment.
+  const litres = (km * ladenPer100) / 100 + (km * cls.fuel_per_100km) / 100;
+  const cost = (litres * ASSUMPTIONS.dieselPriceKztPerL) / ASSUMPTIONS.fuelShareOfOperatingCost;
+  return Math.max(2000, Math.round(cost / 500) * 500);
 }
 
 /**

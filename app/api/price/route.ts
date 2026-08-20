@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 
 import { loadContext } from "@/lib/dispatch";
 import { recommendedOrderPriceKzt } from "@/lib/engine/economics";
+import type { VehicleKind } from "@/lib/types";
+
+const KINDS = ["tent", "refrigerator", "flatbed", "tipper"];
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +19,8 @@ export async function GET(request: Request) {
   const origin = params.get("origin");
   const destination = params.get("destination");
   const weight = Number(params.get("weight"));
+  const kindParam = params.get("kind");
+  const kind = KINDS.includes(kindParam ?? "") ? (kindParam as VehicleKind) : null;
 
   if (!origin || !destination || !Number.isFinite(weight) || weight <= 0) {
     return NextResponse.json({ error: "Нужны origin, destination и weight" }, { status: 400 });
@@ -27,5 +32,5 @@ export async function GET(request: Request) {
   }
 
   const km = dist.km(origin, destination);
-  return NextResponse.json({ km, ...recommendedOrderPriceKzt(km, weight) });
+  return NextResponse.json({ km, ...recommendedOrderPriceKzt(km, weight, kind) });
 }

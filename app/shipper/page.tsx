@@ -2,7 +2,7 @@ import { CounterOffer } from "@/components/CounterOffer";
 import { OrderComposer } from "@/components/OrderComposer";
 import { Badge, EmptyState, Metric, SectionHead, Surface, TopBar } from "@/components/ui";
 import { BODY_LABEL } from "@/lib/engine/cargo-fit";
-import { recommendedOrderPriceKzt } from "@/lib/engine/economics";
+import { dedicatedTripPriceKzt, recommendedOrderPriceKzt } from "@/lib/engine/economics";
 import { km, kzt, weight, when } from "@/lib/format";
 import { listSettlements, listTypedOrders, type OrderView } from "@/lib/queries";
 
@@ -66,8 +66,12 @@ export default async function ShipperPage() {
                 // engine refuses trips that do not cover their diesel, so saying
                 // "ищем машину" and nothing else leaves the shipper waiting for
                 // something that will never happen.
+                // Priced against the body the shipper demanded, if they did —
+                // otherwise the comparison flatters an order nobody can serve.
                 const floor =
-                  order.km !== null ? recommendedOrderPriceKzt(order.km, order.weight_kg).price_kzt : null;
+                  order.km !== null
+                    ? recommendedOrderPriceKzt(order.km, order.weight_kg, order.required_kind).price_kzt
+                    : null;
                 const waiting = order.status === "new" && !order.carrier_plate;
                 const underpriced =
                   waiting &&
@@ -77,6 +81,12 @@ export default async function ShipperPage() {
                 // Asking for a specific body narrows the region's fleet to a
                 // handful of trucks. Saying so beats an indefinite "ищем машину".
                 const narrowedByBody = waiting && !underpriced && order.required_kind !== null;
+                // What a carrier would need to come for this load alone, if no
+                // passing truck ever turns up.
+                const alone =
+                  order.km !== null
+                    ? dedicatedTripPriceKzt(order.km, order.weight_kg, order.required_kind)
+                    : null;
                 return (
                   <Surface key={order.id} interactive className="animate-rise p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -128,9 +138,25 @@ export default async function ShipperPage() {
 
                     {underpriced && floor !== null ? (
                       <div className="mt-2.5 rounded-control border border-warn-border bg-warn-soft px-3 py-2.5 text-small text-warn">
-                        Перевозчики не берут: ваша цена ниже рекомендованного минимума{" "}
-                        <span className="tnum font-semibold">{kzt(floor)}</span>. Ниже неё рейс
-                        не окупает даже топливо, поэтому движок его не предлагает.
+                        Перевозчики не берут: ваша цена ниже минимума{" "}
+                        <span className="tnum font-semibold">{kzt(floor)}</span> — ниже него рейс
+                        не окупает даже топливо.
+                        {alone !== null ? (
+                          <>
+                            {" "}
+                            Минимум считается при попутной машине. Если попутной не найдётся,
+                            отдельный выезд за этим грузом стоит{" "}
+                            <span className="tnum font-semibold">{kzt(alone)}</span>.
+                          </>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {waiting && !underpriced && !narrowedByBody && alone !== null ? (
+                      <div className="mt-2.5 rounded-control border border-ink-200 bg-ink-50 px-3 py-2.5 text-small text-ink-600">
+                        Ждём попутную машину: ваша цена покрывает груз в сборном рейсе, но не
+                        отдельный выезд за ним — он стоил бы{" "}
+                        <span className="tnum font-semibold">{kzt(alone)}</span>.
                       </div>
                     ) : null}
 

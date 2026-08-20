@@ -334,6 +334,13 @@ export function DriverConsole({
   );
 }
 
+/**
+ * Orders in the pool that no proposal picked up.
+ *
+ * Shown to the driver on purpose: a consignment the engine will not build a trip
+ * around is still worth taking by someone already heading that way, and this is
+ * where he sees it before anyone assembles anything.
+ */
 function UnplannedStrip({ orders }: { orders: OrderView[] }) {
   return (
     <Surface accent className="p-3.5">

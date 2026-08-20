@@ -54,7 +54,9 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
       return;
     }
     const controller = new AbortController();
-    const query = `origin=${origin}&destination=${destination}&weight=${weightKg}`;
+    const query =
+      `origin=${origin}&destination=${destination}&weight=${weightKg}` +
+      (requiredKind ? `&kind=${requiredKind}` : "");
     fetch(`/api/price?${query}`, { signal: controller.signal })
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => setFloor(data))
@@ -62,7 +64,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
         /* Aborted or offline: the field simply shows no recommendation. */
       });
     return () => controller.abort();
-  }, [origin, destination, weightKg]);
+  }, [origin, destination, weightKg, requiredKind]);
 
   async function parse() {
     setPhase("parsing");
