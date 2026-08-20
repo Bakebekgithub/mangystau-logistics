@@ -128,12 +128,6 @@ export async function proposeAcrossFleet(
     loadOrders("new"),
   ]);
 
-  const matchOptions: MatchOptions = {
-    ...DEFAULT_MATCH_OPTIONS,
-    now: new Date(),
-    ...options,
-  };
-
   const unassigned = new Map(vehiclesRaw.map(normaliseVehicle).map((v) => [v.id, v]));
   let pool = ordersRaw.map(normaliseOrder);
   const result: ProposalSet[] = [];
@@ -148,6 +142,13 @@ export async function proposeAcrossFleet(
    */
   const typed = new Set(pool.filter((order) => order.raw_text).map((order) => order.id));
   const TYPED_PRIORITY_KM = 100_000;
+
+  const matchOptions: MatchOptions = {
+    ...DEFAULT_MATCH_OPTIONS,
+    now: new Date(),
+    priorityOrderIds: typed,
+    ...options,
+  };
 
   // Plans are cached per vehicle and only recomputed when a vehicle's cached
   // choice used an order that has since been claimed. Without this the loop

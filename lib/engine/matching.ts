@@ -24,6 +24,17 @@ export interface MatchOptions {
   maxProposals: number;
   /** Anchors tried per vehicle. More anchors means a wider search. */
   maxAnchors: number;
+  /**
+   * Orders that must never be crowded out of the candidate pool.
+   *
+   * The pool is capped so subset enumeration stays bounded, and it is filled by
+   * cheapest detour first. That quietly starved the case this product is built
+   * for: several consignments a customer placed together were beaten into the
+   * cap by unrelated orders that happened to sit a kilometre closer, so the
+   * combination carrying all of them was never even generated. Anything listed
+   * here keeps its place in the pool.
+   */
+  priorityOrderIds?: ReadonlySet<string>;
 }
 
 export const DEFAULT_MATCH_OPTIONS: Omit<MatchOptions, "now"> = {
@@ -246,9 +257,14 @@ export function proposeTrips(
    * long haul is the spine of a trip: it defines the corridor other orders can be
    * attached to, so it earns the first anchor slot.
    */
+  const isPriority = (o: Order) => options.priorityOrderIds?.has(o.id) ?? false;
   const anchors = [...serviceable]
     .sort(
       (a, b) =>
+        // A customer's own order gets to be the spine of a trip before any
+        // modelled one does; otherwise it can only ever be attached to someone
+        // else's corridor, or missed entirely.
+        Number(isPriority(b)) - Number(isPriority(a)) ||
         dist.km(vehicle.at_id, a.origin_id) - dist.km(vehicle.at_id, b.origin_id) ||
         dist.km(b.origin_id, b.destination_id) - dist.km(a.origin_id, a.destination_id),
     )
@@ -258,16 +274,22 @@ export function proposeTrips(
   const orderIndex = new Map(allOrders.map((o) => [o.id, o]));
 
   for (const anchor of anchors) {
-    const pool = serviceable
+    const affordable = serviceable
       .filter((o) => o.id !== anchor.id)
       .map((o) => ({ order: o, cost: combinationCost(dist, anchor, o, vehicle.at_id) }))
       .filter((c) => Number.isFinite(c.cost) && c.cost <= options.maxDetourKm)
-      .sort((a, b) => a.cost - b.cost)
-      // Cap the pool so subset enumeration stays bounded. Six keeps the exact
-      // route search well under a second per vehicle; eight roughly doubled the
-      // planning time for a negligible gain in the plans actually chosen.
-      .slice(0, 6)
-      .map((c) => c.order);
+      .sort((a, b) => a.cost - b.cost);
+
+    // Priority orders take their places first; the rest fill what is left. The
+    // cap keeps subset enumeration bounded — six keeps the exact route search
+    // well under a second per vehicle.
+    const POOL_CAP = 6;
+    const priority = options.priorityOrderIds;
+    const preferred = priority
+      ? affordable.filter((c) => priority.has(c.order.id))
+      : [];
+    const rest = affordable.filter((c) => !preferred.includes(c));
+    const pool = [...preferred, ...rest].slice(0, POOL_CAP).map((c) => c.order);
 
     const combinations: Order[][] = [[anchor]];
     for (const extra of subsets(pool, options.maxOrdersPerTrip - 1)) {
