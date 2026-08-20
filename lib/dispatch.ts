@@ -7,6 +7,7 @@
 
 import { getDb } from "./db.ts";
 import { buildDistanceTable, type DistanceRow } from "./distance.ts";
+import { ASSUMPTIONS, recommendedOrderPriceKzt } from "./engine/economics.ts";
 import { DEFAULT_MATCH_OPTIONS, proposeTrips, type MatchOptions } from "./engine/matching.ts";
 import type { DistanceTable, Order, Settlement, TripPlan, Vehicle } from "./types.ts";
 
@@ -54,7 +55,7 @@ export async function loadOrders(status?: Order["status"]): Promise<Order[]> {
   const where = status ? `WHERE status = $1` : ``;
   return db.query<Order>(
     `SELECT id, shipper_name, origin_id, destination_id, cargo, weight_kg,
-            needs_cooling, ready_at, deadline_at, status, raw_text, parsed_by
+            needs_cooling, ready_at, deadline_at, offered_price_kzt, status, raw_text, parsed_by
      FROM orders ${where} ORDER BY created_at`,
     status ? [status] : [],
   );
@@ -73,7 +74,13 @@ function normaliseVehicle(v: Vehicle): Vehicle {
 }
 
 function normaliseOrder(o: Order): Order {
-  return { ...o, weight_kg: Number(o.weight_kg) };
+  return {
+    ...o,
+    weight_kg: Number(o.weight_kg),
+    offered_price_kzt: o.offered_price_kzt === null || o.offered_price_kzt === undefined
+      ? null
+      : Number(o.offered_price_kzt),
+  };
 }
 
 export interface ProposalSet {
@@ -167,13 +174,47 @@ export async function proposeAcrossFleet(
   const score = (plan: TripPlan) =>
     savingOf(plan) + plan.order_ids.filter((id) => typed.has(id)).length * TYPED_PRIORITY_KM;
 
+  /**
+   * What a plan pays, in tenge.
+   *
+   * An order whose shipper has not named a figure yet is valued at the platform's
+   * recommended floor. Treating it as zero would mean a freshly placed order
+   * never got a truck — the opposite of what the shipper is waiting for.
+   */
+  const priceOf = new Map(
+    ordersRaw.map(normaliseOrder).map((order) => {
+      if (order.offered_price_kzt) return [order.id, order.offered_price_kzt] as const;
+      const km = context.dist.has(order.origin_id, order.destination_id)
+        ? context.dist.km(order.origin_id, order.destination_id)
+        : 0;
+      return [order.id, recommendedOrderPriceKzt(km, order.weight_kg).price_kzt] as const;
+    }),
+  );
+
+  /**
+   * Never offer a trip that does not pay for its own diesel.
+   *
+   * The engine will happily assemble a route for four small consignments spread
+   * across the region: it saves kilometres against the baseline, which is what it
+   * optimises. But the driver would be paid 39 000 ₸ to burn 106 000 ₸ of fuel,
+   * and offering that destroys any trust in every other number on the screen.
+   * Kilometres saved is the region's metric; covering fuel is the driver's, and
+   * a proposal has to satisfy both to be worth showing.
+   */
+  const coversFuel = (plan: TripPlan) => {
+    const revenue = plan.order_ids.reduce((sum, id) => sum + (priceOf.get(id) ?? 0), 0);
+    return revenue >= plan.fuel_l * ASSUMPTIONS.dieselPriceKztPerL;
+  };
+
   while (unassigned.size > 0 && pool.length > 0) {
     let best: { vehicle: Vehicle; plans: TripPlan[] } | null = null;
 
     for (const vehicle of unassigned.values()) {
       let plans = cache.get(vehicle.id);
       if (!plans) {
-        plans = proposeTrips(vehicle, pool, context.dist, context.nameOf, matchOptions);
+        plans = proposeTrips(vehicle, pool, context.dist, context.nameOf, matchOptions).filter(
+          coversFuel,
+        );
         cache.set(vehicle.id, plans);
       }
       if (plans.length === 0) continue;

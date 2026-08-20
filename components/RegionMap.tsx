@@ -73,6 +73,10 @@ const REGION_BOUNDS: LatLngBoundsExpression = (() => {
   ];
 })();
 
+/** Longitude through the middle of the region, used to push labels outward. */
+const REGION_MID_LON =
+  ((REGION_BOUNDS as [number, number][])[0][1] + (REGION_BOUNDS as [number, number][])[1][1]) / 2;
+
 /**
  * Builds a gentle arc between two points.
  *
@@ -312,11 +316,18 @@ export default function RegionMap({
           >
             {pin.label ? (
               <Tooltip
-                direction="top"
-                offset={[0, -7]}
+                // Leaflet has no collision avoidance, so labels are pushed away
+                // from the middle of the region: western stops label to the left,
+                // eastern ones to the right. Crude, but it stops the pile-up that
+                // made the route unreadable.
+                direction={pin.lon < REGION_MID_LON ? "left" : "right"}
+                offset={pin.lon < REGION_MID_LON ? [-8, 0] : [8, 0]}
                 permanent={pin.permanentLabel ?? pin.kind === "vehicle"}
+                className="!border-ink-200 !px-1.5 !py-0.5 !shadow-sm"
               >
-                <span className="whitespace-nowrap text-[11px] font-medium">{pin.label}</span>
+                <span className="whitespace-nowrap text-[10.5px] font-semibold text-ink-900">
+                  {pin.label}
+                </span>
               </Tooltip>
             ) : null}
           </CircleMarker>

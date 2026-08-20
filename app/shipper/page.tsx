@@ -1,6 +1,7 @@
 import { CounterOffer } from "@/components/CounterOffer";
 import { OrderComposer } from "@/components/OrderComposer";
 import { Badge, EmptyState, Metric, SectionHead, Surface, TopBar } from "@/components/ui";
+import { recommendedOrderPriceKzt } from "@/lib/engine/economics";
 import { km, kzt, weight, when } from "@/lib/format";
 import { listSettlements, listTypedOrders, type OrderView } from "@/lib/queries";
 
@@ -60,6 +61,18 @@ export default async function ShipperPage() {
             <div className="space-y-2.5">
               {orders.map((order) => {
                 const status = STATUS[order.status];
+                // An order nobody has picked up may simply be underpriced. The
+                // engine refuses trips that do not cover their diesel, so saying
+                // "ищем машину" and nothing else leaves the shipper waiting for
+                // something that will never happen.
+                const floor =
+                  order.km !== null ? recommendedOrderPriceKzt(order.km, order.weight_kg).price_kzt : null;
+                const underpriced =
+                  order.status === "new" &&
+                  !order.carrier_plate &&
+                  floor !== null &&
+                  order.offered_price_kzt !== null &&
+                  order.offered_price_kzt < floor;
                 return (
                   <Surface key={order.id} interactive className="animate-rise p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -103,6 +116,14 @@ export default async function ShipperPage() {
                         <span className="tnum font-semibold text-ink-900">
                           {kzt(order.offered_price_kzt)}
                         </span>
+                      </div>
+                    ) : null}
+
+                    {underpriced && floor !== null ? (
+                      <div className="mt-2.5 rounded-control border border-warn-border bg-warn-soft px-3 py-2.5 text-small text-warn">
+                        Перевозчики не берут: ваша цена ниже рекомендованного минимума{" "}
+                        <span className="tnum font-semibold">{kzt(floor)}</span>. Ниже неё рейс
+                        не окупает даже топливо, поэтому движок его не предлагает.
                       </div>
                     ) : null}
 

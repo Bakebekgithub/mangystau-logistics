@@ -98,7 +98,7 @@ function tripPins(trip: TripView): MapPin[] {
       lat: trip.at_lat,
       lon: trip.at_lon,
       kind: "vehicle",
-      label: `Старт · ${trip.plate}`,
+      label: `Старт ${trip.plate}`,
       permanentLabel: true,
     },
   ];
@@ -107,22 +107,15 @@ function tripPins(trip: TripView): MapPin[] {
     const seqs = entry.stops.map((s) => s.seq).sort((a, b) => a - b);
     const numbers = seqs.length > 2 ? `${seqs[0]}–${seqs[seqs.length - 1]}` : seqs.join("–");
     const actions = new Set(entry.stops.map((s) => s.action));
-    // A place where the truck both drops and collects is the interesting case —
-    // that is consolidation happening, and it should not be hidden behind one word.
-    const what =
-      actions.size === 2
-        ? "выгрузка и погрузка"
-        : actions.has("pickup")
-          ? "забрать"
-          : "выгрузить";
-
+    // Kept short on purpose: labels have no collision avoidance, and the action
+    // at each stop is spelled out in the route timeline on the card anyway.
     pins.push({
       id: `${trip.id}-stop-${settlementId}`,
       lat: entry.lat,
       lon: entry.lon,
       kind: actions.has("pickup") ? "pickup" : "dropoff",
       seq: seqs[0],
-      label: `${numbers} · ${entry.stops[0]!.settlement_name} — ${what}`,
+      label: `${numbers} ${entry.stops[0]!.settlement_name}`,
       permanentLabel: true,
     });
   }
