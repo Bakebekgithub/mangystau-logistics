@@ -115,7 +115,10 @@ export function DriverConsole({
   /** Indicative price per trip id, computed server-side from its fuel. */
   priceOf: Record<string, number>;
 }) {
-  const shown = active.length > 0 ? active : proposed;
+  // Both lists are shown at once. Hiding the offers behind an active trip meant a
+  // driver mid-route could not see what else was available, and an order placed
+  // seconds earlier appeared nowhere at all.
+  const shown = [...active, ...proposed];
   const [selectedId, setSelectedId] = useState<string | null>(shown[0]?.id ?? null);
   const selected = shown.find((trip) => trip.id === selectedId) ?? shown[0] ?? null;
   const { run, busy, error } = useAction();
@@ -131,13 +134,10 @@ export function DriverConsole({
       <div className="flex w-full flex-col border-ink-200 lg:w-[27rem] lg:shrink-0 lg:border-r xl:w-[30rem]">
         <div className="flex items-center justify-between gap-3 border-b border-ink-200 px-4 py-3">
           <div>
-            <h1 className="text-h3 text-ink-900">
-              {active.length > 0 ? "Мой рейс" : "Доступные рейсы"}
-            </h1>
+            <h1 className="text-h3 text-ink-900">Рейсы</h1>
             <p className="text-small text-ink-500">
-              {active.length > 0
-                ? "Отмечайте точки по мере выполнения"
-                : `${proposed.length} собрано движком из ${proposed.reduce((sum, t) => sum + new Set(t.stops.map((s) => s.order_id)).size, 0)} заявок`}
+              {active.length > 0 ? `${active.length} в работе · ` : ""}
+              {proposed.length} доступно
             </p>
           </div>
           <button onClick={() => run("/api/plan")} disabled={busy} className={buttonClass("secondary", "sm")}>
@@ -150,25 +150,37 @@ export function DriverConsole({
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
           {unplanned.length > 0 ? <UnplannedStrip orders={unplanned} /> : null}
 
-          {shown.length === 0 ? (
+          {active.length === 0 && proposed.length === 0 ? (
             <EmptyState title="Рейсов пока нет">
               Нажмите «Пересобрать» — движок пройдёт по пулу заявок и соберёт рейсы заново.
             </EmptyState>
           ) : null}
 
-          {shown.map((trip) =>
-            active.length > 0 ? (
-              <ActiveTripCard key={trip.id} trip={trip} price={priceOf[trip.id] ?? 0} />
-            ) : (
-              <ProposalCard
-                key={trip.id}
-                trip={trip}
-                price={priceOf[trip.id] ?? 0}
-                selected={selected?.id === trip.id}
-                onSelect={() => setSelectedId(trip.id)}
-              />
-            ),
-          )}
+          {active.length > 0 ? (
+            <>
+              <div className="pt-1 text-caption uppercase text-ink-500">В работе</div>
+              {active.map((trip) => (
+                <ActiveTripCard key={trip.id} trip={trip} price={priceOf[trip.id] ?? 0} />
+              ))}
+            </>
+          ) : null}
+
+          {proposed.length > 0 ? (
+            <>
+              <div className="pt-2 text-caption uppercase text-ink-500">
+                Доступные рейсы · {proposed.length}
+              </div>
+              {proposed.map((trip) => (
+                <ProposalCard
+                  key={trip.id}
+                  trip={trip}
+                  price={priceOf[trip.id] ?? 0}
+                  selected={selected?.id === trip.id}
+                  onSelect={() => setSelectedId(trip.id)}
+                />
+              ))}
+            </>
+          ) : null}
         </div>
       </div>
 
