@@ -8,6 +8,7 @@ import type { MapArc, MapPin, MapSettlement } from "./RegionMap";
 import { Badge, EmptyState, LadenBar, Metric, RouteTimeline, Surface, buttonClass } from "./ui";
 import type { OrderView, TripStopView, TripView } from "@/lib/queries";
 import { duration, km, kzt, litres, percent, routeSummary, vehicleLabel, weight } from "@/lib/format";
+import { bodyFitsCargo, BODY_ACCEPTS_LABEL } from "@/lib/engine/cargo-fit";
 import { ASSUMPTIONS } from "@/lib/engine/economics";
 import type { VehicleKind } from "@/lib/types";
 
@@ -144,10 +145,11 @@ export function DriverConsole({
   }
 
   // A trip was planned for a particular truck, so a truck at least that big can
-  // certainly run it. Chilled loads need a reefer and nothing else will do.
+  // certainly run it. Beyond weight, every consignment aboard has to suit the
+  // body: a tipper is not carrying bottled water, whatever its tonnage.
   const fits = (trip: TripView) =>
     trip.capacity_kg <= profile.capacity_kg &&
-    (trip.vehicle_kind !== "refrigerator" || profile.kind === "refrigerator");
+    trip.stops.every((stop) => !stop.cargo || bodyFitsCargo(profile.kind, stop.cargo));
 
   const offers = proposed.filter(fits);
   const hidden = proposed.length - offers.length;
@@ -193,7 +195,7 @@ export function DriverConsole({
           {active.length === 0 && offers.length === 0 ? (
             <EmptyState title={hidden > 0 ? "Под вашу машину рейсов нет" : "Рейсов пока нет"}>
               {hidden > 0
-                ? `${hidden} рейс${hidden === 1 ? "" : "а"} рассчитан${hidden === 1 ? "" : "ы"} на другой кузов. Поменяйте машину выше или нажмите «Пересобрать».`
+                ? `${hidden} рейс${hidden === 1 ? "" : "а"} не под этот кузов — ${BODY_ACCEPTS_LABEL[profile.kind]}. Поменяйте машину выше или нажмите «Пересобрать».`
                 : "Нажмите «Пересобрать» — движок пройдёт по пулу заявок и соберёт рейсы заново."}
             </EmptyState>
           ) : null}
@@ -679,7 +681,9 @@ function ProfileBar({
             </option>
           ))}
         </select>
-        <span className="text-[0.6875rem] text-ink-500">— показываем только то, что влезет</span>
+        <span className="text-[0.6875rem] text-ink-500">
+          — {BODY_ACCEPTS_LABEL[profile.kind]}, до {profile.capacity_kg / 1000} т
+        </span>
       </div>
     </div>
   );

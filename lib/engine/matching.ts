@@ -11,6 +11,7 @@
  */
 
 import type { DistanceTable, Order, TripPlan, TripStop, Vehicle } from "../types.ts";
+import { bodyFitsCargo } from "./cargo-fit.ts";
 import { baselineForOrders, evaluateRoute, savingsAgainstBaseline } from "./economics.ts";
 
 export interface MatchOptions {
@@ -49,6 +50,10 @@ function isServiceable(order: Order, vehicle: Vehicle, now: Date, dist: Distance
   if (order.status !== "new") return false;
   if (order.weight_kg > vehicle.capacity_kg) return false;
   if (order.needs_cooling && vehicle.kind !== "refrigerator") return false;
+  // Weight and cold are not the only constraints on a body. A tipper cannot take
+  // bottled water and a reefer has no business carrying bricks; planning such a
+  // trip only produces an offer no carrier can accept.
+  if (!bodyFitsCargo(vehicle.kind, order.cargo)) return false;
   if (new Date(order.deadline_at) < now) return false;
   // A pair with no known road distance cannot be costed, so it is not offered.
   return (
