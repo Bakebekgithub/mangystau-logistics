@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { loadContext } from "@/lib/dispatch";
-import { recommendedOrderPriceKzt } from "@/lib/engine/economics";
+import { dedicatedTripPriceKzt, recommendedOrderPriceKzt } from "@/lib/engine/economics";
 import type { VehicleKind } from "@/lib/types";
 
 const KINDS = ["tent", "refrigerator", "flatbed", "tipper"];
@@ -32,5 +32,16 @@ export async function GET(request: Request) {
   }
 
   const km = dist.km(origin, destination);
-  return NextResponse.json({ km, ...recommendedOrderPriceKzt(km, weight, kind) });
+  // Two prices, because they answer two different questions. The floor is what
+  // the load costs once a truck is already going that way — the marginal cost,
+  // and the reason the platform exists. The dedicated figure is what a carrier
+  // charges to make the run for this load alone, which is what a shipper posting
+  // on their own is actually buying until we consolidate them. Showing only the
+  // floor read as a fantasy price, and rightly so: 160 ₸/km is below any real
+  // rate in the region.
+  return NextResponse.json({
+    km,
+    ...recommendedOrderPriceKzt(km, weight, kind),
+    dedicated_kzt: dedicatedTripPriceKzt(km, weight, kind),
+  });
 }

@@ -305,16 +305,16 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
                       inputMode="numeric"
                       value={price}
                       onChange={(event) => setPrice(event.target.value.replace(/[^\d\s]/g, ""))}
-                      placeholder={floor ? String(floor.price_kzt) : "20000"}
+                      placeholder={floor ? String(floor.dedicated_kzt) : "20000"}
                       className={`${INPUT} tnum max-w-[11rem] text-[1.0625rem] font-semibold`}
                     />
                     <span className="text-body text-ink-600">₸</span>
                     {floor ? (
                       <button
-                        onClick={() => setPrice(String(floor.price_kzt))}
+                        onClick={() => setPrice(String(floor.dedicated_kzt))}
                         className="rounded-pill border border-brand-border bg-white px-2.5 py-1 text-[0.6875rem] font-medium text-brand transition hover:bg-brand-soft"
                       >
-                        поставить {kzt(floor.price_kzt)}
+                        поставить {kzt(floor.dedicated_kzt)}
                       </button>
                     ) : null}
                   </span>
@@ -323,22 +323,31 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
 
               {floor ? (
                 <div className="mt-2.5 text-small text-ink-600">
-                  <p>
-                    Рекомендуем от{" "}
-                    <span className="tnum font-semibold text-ink-900">{kzt(floor.price_kzt)}</span>. Плечо{" "}
-                    <span className="tnum">{Math.round(floor.km)} км</span>. Под такой вес берём самую
-                    маленькую подходящую машину —{" "}
-                    <span className="tnum">{floor.capacity_kg / 1000}-тонник</span>: груз занимает{" "}
-                    <span className="tnum">{Math.round(floor.charged_share * 100)}%</span> её кузова, за эту
-                    долю и считаем.
+                  <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                    <span>
+                      Отдельным выездом —{" "}
+                      <span className="tnum font-semibold text-ink-900">{kzt(floor.dedicated_kzt)}</span>
+                    </span>
+                    <span className="text-laden-ink">
+                      В сборном рейсе — от{" "}
+                      <span className="tnum font-semibold">{kzt(floor.price_kzt)}</span>
+                    </span>
+                  </div>
+
+                  <p className="mt-1.5">
+                    Плечо <span className="tnum">{Math.round(floor.km)} км</span>. Отдельный выезд —
+                    это когда машина идёт только за вашим грузом и возвращается порожней. В сборном
+                    рейсе она везёт вас попутно, и вы платите только за своё плечо. Разницу между
+                    этими суммами и создаёт платформа.
                   </p>
                   <p className="mt-1.5">
-                    Топливо на груженое плечо{" "}
+                    Считаем по{" "}
                     <span className="tnum">
-                      {floor.fuel_l.toFixed(1)} л × {ASSUMPTIONS.dieselPriceKztPerL} ₸
+                      {floor.capacity_kg / 1000}-тонн
+                      {floor.for_kind ? `ому ${BODY_LABEL[floor.for_kind]}` : "ику"}
                     </span>{" "}
-                    делим на {ASSUMPTIONS.fuelShareOfOperatingCost} — долю топлива в затратах
-                    перевозчика — и округляем до 500. Ниже этой суммы он едет в убыток.
+                    — самой маленькой подходящей машине: топливо по реальной дороге ×{" "}
+                    {ASSUMPTIONS.dieselPriceKztPerL} ₸ ÷ {ASSUMPTIONS.fuelShareOfOperatingCost}.
                   </p>
                   <p className="mt-1.5">
                     Это не тариф: цену ставите вы, перевозчик соглашается или предлагает свою.
@@ -346,7 +355,7 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
                 </div>
               ) : (
                 <p className="mt-2.5 text-small text-ink-600">
-                  Укажите маршрут и вес — покажем рекомендованный минимум.
+                  Укажите маршрут и вес — посчитаем оба варианта.
                 </p>
               )}
             </div>
@@ -402,6 +411,8 @@ export function OrderComposer({ settlements }: { settlements: SettlementOption[]
 interface PriceFloor {
   km: number;
   price_kzt: number;
+  /** Cost of a run made for this load alone — what a lone shipper is buying. */
+  dedicated_kzt: number;
   fuel_l: number;
   /** Truck class the floor assumes: the smallest one the cargo fits into. */
   capacity_kg: number;
