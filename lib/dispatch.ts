@@ -138,11 +138,27 @@ export async function proposeAcrossFleet(
   let pool = ordersRaw.map(normaliseOrder);
   const result: ProposalSet[] = [];
 
+  /**
+   * Orders a person actually placed, as opposed to the modelled demand.
+   *
+   * These are served first. Ranking purely by kilometres saved let a real
+   * customer order lose to a bigger synthetic one and go unassigned entirely —
+   * which is both wrong as a product (the person who just ordered is the one
+   * waiting) and useless as a demonstration.
+   */
+  const typed = new Set(pool.filter((order) => order.raw_text).map((order) => order.id));
+  const TYPED_PRIORITY_KM = 100_000;
+
   // Plans are cached per vehicle and only recomputed when a vehicle's cached
   // choice used an order that has since been claimed. Without this the loop
   // re-plans the entire fleet every round, which measured at 14 seconds — far
   // too slow to sit behind a web request.
   const cache = new Map<string, TripPlan[]>();
+
+  /** Kilometres avoided, with customer orders lifted above the modelled pool. */
+  const score = (plan: TripPlan) =>
+    savingOf(plan) +
+    (plan.order_ids.some((id) => typed.has(id)) ? TYPED_PRIORITY_KM : 0);
 
   while (unassigned.size > 0 && pool.length > 0) {
     let best: { vehicle: Vehicle; plans: TripPlan[] } | null = null;
@@ -154,8 +170,12 @@ export async function proposeAcrossFleet(
         cache.set(vehicle.id, plans);
       }
       if (plans.length === 0) continue;
-      if (!best || savingOf(plans[0]!) > savingOf(best.plans[0]!)) {
-        best = { vehicle, plans };
+
+      // Re-rank this vehicle's own plans so a plan carrying a customer order
+      // wins over a merely longer one.
+      const ranked = [...plans].sort((a, b) => score(b) - score(a));
+      if (!best || score(ranked[0]!) > score(best.plans[0]!)) {
+        best = { vehicle, plans: ranked };
       }
     }
 
