@@ -181,10 +181,12 @@
 
   <div>
     <div class="eyebrow">Цифровая платформа грузоперевозок и последнего километра</div>
-    <h1 style="margin-top: 18px; max-width: 15.5em;">Область перевозит<br>тот же груз<br>на 5 000 км меньше</h1>
+    <h1 style="margin-top: 18px; max-width: 15.5em;">Три из четырёх<br>километров<br>вместо каждого второго</h1>
     <p class="lead" style="margin-top: 18px; max-width: 34em;">
       Диспетчер, который собирает из разрозненных заявок один рейс: попутные грузы вместе,
-      обратная загрузка вместо порожнего хода. Работающий MVP на реальной дорожной сети Мангистау.
+      обратная загрузка вместо порожнего хода. <strong>74% километров с грузом</strong> там, где
+      схема «отвёз и вернулся пустым» даёт максимум 50%. Работающий MVP на реальной дорожной
+      сети Мангистау.
     </p>
   </div>
 
@@ -267,18 +269,19 @@
       <div class="stat-label">Как сегодня — биржа объявлений</div>
       <h3 style="margin-top: 4px;">Четыре заявки — четыре рейса</h3>
       <table>
-        <tr><td>Бейнеу → Баскудук, питьевая вода 2,5 т</td><td class="tnum" style="text-align:right;">72 000 ₸</td></tr>
-        <tr><td>Бейнеу → Атамекен, арматура 1,1 т</td><td class="tnum" style="text-align:right;">34 500 ₸</td></tr>
-        <tr><td>Мангистау → Боранкул, вода 1,4 т</td><td class="tnum" style="text-align:right;">60 500 ₸</td></tr>
-        <tr><td>Кызылтобе → Бейнеу, рыба 1,8 т</td><td class="tnum" style="text-align:right;">39 000 ₸</td></tr>
+        <tr><td>Баскудук → Бейнеу</td><td class="tnum" style="text-align:right;">4 груза</td></tr>
+        <tr><td>Бейнеу → Тущыбек</td><td class="tnum" style="text-align:right;">попутно</td></tr>
+        <tr><td>Тущыбек → Мангистау</td><td class="tnum" style="text-align:right;">попутно</td></tr>
+        <tr><td>обратная загрузка в Баскудук</td><td class="tnum" style="text-align:right;">142 500 ₸</td></tr>
       </table>
       <div class="bar">
         <span style="background: var(--laden); width: 50%;"></span>
         <span style="background: var(--empty); width: 50%;"></span>
       </div>
       <p style="margin-top: 10px; font-size:16px;">
-        <strong class="tnum">3 910 км</strong> суммарно, из них <strong style="color:var(--empty-ink)">1 955 км порожняком</strong>:
-        каждая из четырёх машин возвращается пустой.
+        <strong class="tnum">3 417 км</strong> суммарно, из них
+        <strong style="color:var(--empty-ink)">половина порожняком</strong>: каждая
+        из четырёх машин возвращается пустой.
       </p>
     </div>
 
@@ -286,19 +289,18 @@
       <div class="stat-label">С диспетчером — один рейс</div>
       <h3 style="margin-top: 4px;">Те же четыре груза, одна машина</h3>
       <p style="margin-top: 12px; font-size:17px; color: var(--ink-700);">
-        Бейнеу → Баскудук → Атамекен → Мангистау → Боранкул → Кызылтобе → Бейнеу.
-        Груз выгружается там, где стоит следующий, а на обратном плече машина
-        везёт рыбу в Бейнеу.
+        Баскудук → Бейнеу → Тущыбек → Мангистау → Баскудук. Груз выгружается там,
+        где стоит следующий, а на обратном плече машина не идёт порожней.
       </p>
       <div class="bar">
-        <span style="background: var(--laden); width: 89%;"></span>
-        <span style="background: var(--empty); width: 11%;"></span>
+        <span style="background: var(--laden); width: 99%;"></span>
+        <span style="background: var(--empty); width: 1%;"></span>
       </div>
       <p style="margin-top: 10px; font-size:16px;">
-        <strong class="tnum">1 170 км</strong> вместо 3 910, порожний
-        <strong class="tnum">126 км</strong> вместо 1 955,
-        <strong style="color:var(--laden-ink)">89% километров с грузом</strong>,
-        водителю платят <strong class="tnum">206 000 ₸</strong> вместо одной ставки.
+        <strong class="tnum">977 км</strong> вместо 3 417, порожний
+        <strong class="tnum">9,6 км</strong>,
+        <strong style="color:var(--laden-ink)">99% километров с грузом</strong>,
+        водителю платят <strong class="tnum">142 500 ₸</strong> вместо одной ставки.
       </p>
       <p style="margin-top: 14px; font-size:16px;">
         Это настоящий рейс из демо, а не пример на салфетке: движок собрал его сам
@@ -444,23 +446,23 @@
   <div class="grid4" style="margin-top: 22px;">
     <div class="card good">
       <div class="stat-label">Оплачиваемых километров</div>
-      <div class="stat good tnum">84%</div>
+      <div class="stat good tnum">74%</div>
       <div class="stat-sub">Против <strong>50%</strong> — потолка, который физически недостижим без обратной загрузки.</div>
     </div>
     <div class="card good">
-      <div class="stat-label">Километров не поедет</div>
-      <div class="stat good tnum">5 264</div>
-      <div class="stat-sub">Против сценария «каждая заявка — свой рейс туда и обратно».</div>
+      <div class="stat-label">Рейсов, не окупающих топливо</div>
+      <div class="stat good tnum">0</div>
+      <div class="stat-sub">Движок не предлагает водителю убыточный рейс — даже если тот экономит километры области.</div>
     </div>
     <div class="card good">
       <div class="stat-label">Топлива сэкономлено</div>
-      <div class="stat good tnum">1 541 л</div>
-      <div class="stat-sub">= <strong>516 000 ₸</strong> по розничной цене дизеля.</div>
+      <div class="stat good tnum">1 108 л</div>
+      <div class="stat-sub">3 470 км не поедут; это <strong>371 000 ₸</strong> по розничной цене дизеля.</div>
     </div>
     <div class="card accent">
       <div class="stat-label">Заявок закрыто</div>
-      <div class="stat brand tnum">38 / 48</div>
-      <div class="stat-sub">11 рейсами. Остальные 10 — вес, кузов, холод или срок.</div>
+      <div class="stat brand tnum">34 / 48</div>
+      <div class="stat-sub">10 рейсами. Остальные 14 — кузов, срок, или заказчик предлагает меньше стоимости топлива.</div>
     </div>
   </div>
 
@@ -468,10 +470,10 @@
     <div class="card">
       <h3>Экономика одного рейса — глазами водителя</h3>
       <table>
-        <tr><td>Заказчики предлагают (4 груза)</td><td class="tnum" style="text-align:right; color: var(--laden-ink); font-weight:600;">206 000 ₸</td></tr>
-        <tr><td>Топливо на рейс, 246 л</td><td class="tnum" style="text-align:right; color: var(--empty-ink);">−82 000 ₸</td></tr>
-        <tr><td>Порожний пробег</td><td class="tnum" style="text-align:right;">126 км из 1 170</td></tr>
-        <tr><td>Оплачиваемых километров</td><td class="tnum" style="text-align:right;">89%</td></tr>
+        <tr><td>Заказчики предлагают (4 груза)</td><td class="tnum" style="text-align:right; color: var(--laden-ink); font-weight:600;">142 500 ₸</td></tr>
+        <tr><td>Топливо на рейс, 243 л</td><td class="tnum" style="text-align:right; color: var(--empty-ink);">−81 000 ₸</td></tr>
+        <tr><td>Порожний пробег</td><td class="tnum" style="text-align:right;">9,6 км из 977</td></tr>
+        <tr><td>Оплачиваемых километров</td><td class="tnum" style="text-align:right;">99%</td></tr>
       </table>
       <p style="margin-top: 12px; font-size:16px;">
         Ни одна цифра заработка не придумана движком: это сумма того, что предложили
@@ -481,7 +483,7 @@
     <div class="card">
       <h3>Что это меняет для области</h3>
       <ul class="bullets" style="margin-top: 2px;">
-        <li class="good"><strong>4 малых удалённых пункта</strong> получили груз, который по отдельности никто бы не повёз</li>
+        <li class="good">Мелкие партии в села <strong>объединены в рейсы</strong>, которые по отдельности никто бы не повёз</li>
         <li class="good">Порожние коридоры видны акимату по именам, а не общей цифрой</li>
         <li class="good">Тот же парк перевозит больше — без нового грузовика</li>
       </ul>
@@ -523,7 +525,7 @@
 </section>
 
 <!-- 8 — Как собирается рейс -->
-<section class="slide">
+<section class="slide dense">
   <div class="eyebrow">Движок</div>
   <h2 style="margin-top: 14px;">Точный перебор, а не «примерно похоже»</h2>
 
@@ -535,6 +537,7 @@
         <li>Перебираются комбинации заявок, и для каждой ищется порядок остановок — <strong>полным перебором</strong> с тремя отсечениями</li>
         <li>Погрузка всегда раньше выгрузки; вес никогда не превышает вместимость; ветка отбрасывается, как только становится длиннее лучшей найденной</li>
         <li>Машины распределяются жадно, с пересчётом планов после каждого назначения — иначе половина заявок остаётся без рейса</li>
+        <li>Груз должен подходить кузову, а рейс — <strong>окупать своё топливо</strong>: экономия километров это метрика области, окупаемость — метрика водителя</li>
       </ul>
 
       <div class="card soft" style="margin-top: 24px;">
@@ -748,13 +751,13 @@
     <div class="grid3" style="margin-top: 20px;">
       <div class="card good">
         <div class="stat-label">Оплачиваемых километров</div>
-        <div class="stat good tnum">84%</div>
+        <div class="stat good tnum">74%</div>
         <div class="stat-sub">потолок без обратной загрузки — 50%</div>
       </div>
       <div class="card good">
         <div class="stat-label">Не поедет по области</div>
-        <div class="stat good tnum">5 264 км</div>
-        <div class="stat-sub">1 541 литр топлива, 516 000 ₸</div>
+        <div class="stat good tnum">3 470 км</div>
+        <div class="stat-sub">1 108 литров топлива, 371 000 ₸</div>
       </div>
       <div class="card accent">
         <div class="stat-label">Работает прямо сейчас</div>
