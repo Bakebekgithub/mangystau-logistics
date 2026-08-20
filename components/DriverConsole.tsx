@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { MapPanel } from "./MapPanel";
+import { TopUpPanel } from "./TopUpPanel";
 import type { MapArc, MapPin, MapSettlement } from "./RegionMap";
 import { Badge, EmptyState, LadenBar, Metric, RouteTimeline, Surface, buttonClass } from "./ui";
 import type { OrderView, TripStopView, TripView } from "@/lib/queries";
@@ -279,6 +280,13 @@ export function DriverConsole({
         {error ? <div className="px-4 pt-3 text-small text-danger">{error}</div> : null}
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          {/* A carrier with his own deal comes here first, not to the offer list. */}
+          <TopUpPanel
+            settlements={settlements.map((s) => ({ id: s.id, name_ru: s.name_ru }))}
+            kind={profile.kind}
+            capacityKg={profile.capacity_kg}
+          />
+
           {unplanned.length > 0 ? <UnplannedStrip orders={unplanned} /> : null}
 
           {active.length === 0 && offers.length === 0 ? (
