@@ -72,6 +72,11 @@ const OUTBOUND_CARGO: readonly CargoItem[] = [
   { cargo: "медикаменты", cooling: true },
   { cargo: "запчасти", cooling: false },
   { cargo: "корм для скота", cooling: false },
+  // Bulk building materials. Mangystau builds and quarries, so a share of the
+  // flow is loose freight — and without it the region's tippers have nothing to
+  // do, which is a demand model that does not match the fleet.
+  { cargo: "щебень", cooling: false },
+  { cargo: "песок", cooling: false },
 ] as const;
 
 /** Goods that flow back from villages and industrial sites. */
@@ -83,6 +88,7 @@ const INBOUND_CARGO: readonly CargoItem[] = [
   { cargo: "овощи", cooling: false },
   { cargo: "металлолом", cooling: false },
   { cargo: "оборудование на ремонт", cooling: false },
+  { cargo: "гравий с карьера", cooling: false },
 ] as const;
 
 /**
