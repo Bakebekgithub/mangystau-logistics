@@ -61,6 +61,15 @@ export function DemoRunner({
   }
 
   async function run() {
+    // The reset rebuilds the modelled demand from scratch, which means anything
+    // a visitor placed by hand disappears. That has to be said out loud before
+    // it happens, not discovered afterwards.
+    const confirmed = window.confirm(
+      "Демонстрация вернёт данные в исходное состояние.\n\n" +
+        "Заявки, которые вы разместили сами, будут удалены. Продолжить?",
+    );
+    if (!confirmed) return;
+
     cancelled.current = false;
     setState("running");
     setLog([]);
@@ -173,6 +182,9 @@ export function DemoRunner({
                 Три мелких груза в разные села превращаются в один рейс. Всё, что вы увидите,
                 делают настоящие функции продукта — заявки создаются, рейс собирается движком,
                 водитель его принимает.
+              </p>
+              <p className="mt-2 text-small text-warn-ink">
+                Прогон сбрасывает данные: заявки, размещённые вручную, будут удалены.
               </p>
             </div>
             {state === "done" ? <Badge tone="laden">готово</Badge> : null}
