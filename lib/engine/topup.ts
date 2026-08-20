@@ -61,6 +61,16 @@ export interface TopUpResult {
 const MAX_DETOUR_KM = 120;
 
 /**
+ * The detour may not eat more than half the fee.
+ *
+ * A positive balance is not the same as a worthwhile job. Fifty-five kilometres
+ * out of the way for 145 ₸ left over is arithmetically a gain and practically an
+ * insult; listing it teaches the driver to ignore the list. Half is a round,
+ * defensible line: below it the diesel, not the freight, is running the trip.
+ */
+const MIN_NET_SHARE_OF_FEE = 0.5;
+
+/**
  * Extra distance to collect and deliver `order` while travelling from → to.
  *
  * Returns Infinity when any leg is unknown, so an uncostable candidate can never
@@ -149,10 +159,11 @@ function rank(
     });
   }
 
-  // Only offers that leave the driver better off. He is already making this trip;
-  // a consignment that eats its own fee in diesel is not an opportunity.
+  // Only offers that leave the driver meaningfully better off. He is already
+  // making this trip; a consignment that eats most of its fee in diesel is not
+  // an opportunity, and showing it devalues the ones that are.
   return candidates
-    .filter((candidate) => candidate.net_kzt > 0)
+    .filter((candidate) => candidate.net_kzt >= candidate.pays_kzt * MIN_NET_SHARE_OF_FEE)
     .sort((a, b) => b.net_kzt - a.net_kzt)
     .slice(0, 6);
 }

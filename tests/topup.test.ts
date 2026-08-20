@@ -108,6 +108,19 @@ describe("дозагрузка попутного рейса", () => {
     assert.equal(result.along.length, 0);
   });
 
+  it("не предлагает груз, у которого крюк съедает больше половины платы", () => {
+    // 80 км крюка ради 8 000 ₸: в плюсе, но ради этого никто не поедет, а такие
+    // строки в списке учат водителя список не читать.
+    const notWorthIt = order({
+      id: "meh",
+      origin_id: "aktau",
+      destination_id: "senek",
+      offered_price_kzt: 8000,
+    });
+    const result = findTopUp([notWorthIt], dist, request);
+    assert.equal(result.along.length, 0);
+  });
+
   it("уважает кузов и холод", () => {
     const chilled = order({
       id: "fish",
