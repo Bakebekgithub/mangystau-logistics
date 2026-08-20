@@ -133,7 +133,13 @@ function chevron(points: [number, number][]): [number, number][][] {
   const uy = dLon / len;
 
   const tip = points[mid]!;
-  const size = 0.085;
+  // Scaled to the leg, so a 40 km hop does not get the same chevron as a 500 km
+  // haul. A fixed size looked detached from the line on short legs.
+  const span = Math.hypot(
+    points[points.length - 1]![0] - points[0]![0],
+    points[points.length - 1]![1] - points[0]![1],
+  );
+  const size = Math.min(0.055, Math.max(0.018, span * 0.09));
   // Two barbs swept back from the tip at roughly 35°.
   const back = 0.82;
   const side = 0.55;
@@ -306,12 +312,15 @@ export default function RegionMap({
           <CircleMarker
             key={pin.id}
             center={[pin.lat, pin.lon]}
-            radius={pin.kind === "vehicle" ? 7 : 6}
+            // The vehicle's own position looked exactly like a pickup, so the
+            // one dot that is not a stop read as a misplaced stop. It is now a
+            // bigger hollow ring — clearly a different kind of thing.
+            radius={pin.kind === "vehicle" ? 9 : 6}
             pathOptions={{
-              color: pin.kind === "vehicle" ? "#2563EB" : pin.kind === "pickup" ? "#2563EB" : "#0F172A",
-              weight: 2.5,
-              fillColor: pin.kind === "dropoff" ? "#FFFFFF" : "#2563EB",
-              fillOpacity: pin.kind === "dropoff" ? 1 : 0.9,
+              color: pin.kind === "dropoff" ? "#0F172A" : "#2563EB",
+              weight: pin.kind === "vehicle" ? 3.5 : 2.5,
+              fillColor: pin.kind === "pickup" ? "#2563EB" : "#FFFFFF",
+              fillOpacity: 1,
             }}
           >
             {pin.label ? (

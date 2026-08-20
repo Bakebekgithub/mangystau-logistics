@@ -39,7 +39,12 @@ function tripArcs(trip: TripView): MapArc[] {
       // Naming both ends and what is in the body makes the leg readable on its
       // own. A line whose only property is a colour leaves the viewer guessing
       // which way the truck is going and why that stretch is paid.
-      const cargoNote = aboard.length > 0 ? `в кузове: ${aboard.join(", ")}` : "порожний";
+      const cargoNote =
+        aboard.length > 0
+          ? `в кузове: ${aboard.join(", ")}`
+          : index === 0
+            ? "подъезд к первой погрузке, порожний"
+            : "порожний";
       arcs.push({
         id: `${trip.id}-leg-${index}`,
         from: at,
@@ -98,14 +103,16 @@ function tripPins(trip: TripView): MapPin[] {
       lat: trip.at_lat,
       lon: trip.at_lon,
       kind: "vehicle",
-      label: "Старт",
+      label: `Старт · ${trip.at_name}`,
       permanentLabel: true,
     },
   ];
 
   for (const [settlementId, entry] of bySettlement) {
+    // Every number, not a range. "1–5 Шетпе" hid that the truck comes back to
+    // Шетпе three times, which is exactly the consolidation worth seeing.
     const seqs = entry.stops.map((s) => s.seq).sort((a, b) => a - b);
-    const numbers = seqs.length > 2 ? `${seqs[0]}–${seqs[seqs.length - 1]}` : seqs.join("–");
+    const numbers = seqs.join("·");
     const actions = new Set(entry.stops.map((s) => s.action));
     // Kept short on purpose: labels have no collision avoidance, and the action
     // at each stop is spelled out in the route timeline on the card anyway.
@@ -783,8 +790,10 @@ function MapLegend({ trip }: { trip: TripView }) {
       <div className="mt-1.5 tnum text-[0.6875rem] text-ink-500">
         {km(trip.total_km)} · порожний {km(trip.empty_km)} · оплачиваемых {percent(trip.paid_km_share)}
       </div>
-      <div className="mt-1 text-[0.6875rem] text-ink-500">
-        Цифры у точек — порядок остановок. Наведите на линию — покажет, что в кузове.
+      <div className="mt-1 max-w-[19rem] text-[0.6875rem] leading-snug text-ink-500">
+        Цифры у точек — порядок остановок. Пунктир — подъезд от текущего места машины
+        к первой погрузке и возврат на базу: эти километры никто не оплачивает, их и
+        сокращает подбор обратного груза. Наведите на линию — покажет, что в кузове.
       </div>
     </div>
   );
